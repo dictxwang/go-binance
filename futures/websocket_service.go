@@ -559,6 +559,11 @@ type WsBookTickerEvent struct {
 	BestAskQty      string `json:"A"`
 }
 
+type WsCombinedBookTickerEvent struct {
+	Data   *WsBookTickerEvent `json:"data"`
+	Stream string             `json:"stream"`
+}
+
 // WsBookTickerHandler handle websocket that pushes updates to the best bid or ask price or quantity in real-time for a specified symbol.
 type WsBookTickerHandler func(event *WsBookTickerEvent)
 
@@ -601,15 +606,16 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
+
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
-		event := new(WsBookTickerEvent)
+		event := new(WsCombinedBookTickerEvent)
 		err := json.Unmarshal(message, event)
 		if err != nil {
 			errHandler(err)
 			return
 		}
-		handler(event)
+		handler(event.Data)
 	}
 	return wsServe(cfg, wsHandler, errHandler)
 }
