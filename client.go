@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -269,14 +270,51 @@ func getAPIEndpoint() string {
 // NewClient initialize an API client instance with API key and secret key.
 // You should always call this function before using this SDK.
 // Services will be created by the form client.NewXXXService().
-func NewClient(apiKey, secretKey string) *Client {
+func NewClient(apiKey, secretKey string, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
 	return &Client{
 		APIKey:     apiKey,
 		SecretKey:  secretKey,
 		BaseURL:    getAPIEndpoint(),
 		UserAgent:  "Binance/golang",
-		HTTPClient: http.DefaultClient,
+		HTTPClient: httpClient,
 		Logger:     log.New(os.Stderr, "Binance-golang ", log.LstdFlags),
+	}
+}
+
+// NewClientWithIP initialize an API client instance with API key, secret key and local IP.
+func NewClientWithIP(apiKey, secretKey, ip string) *Client {
+	parsedIP := net.ParseIP(ip)
+	if parsedIP == nil {
+		log.Fatalf("spot NewClientWithIP ip=%s is invalid", ip)
+	}
+
+	dialer := &net.Dialer{
+		LocalAddr: &net.TCPAddr{
+			IP:   parsedIP, // 设置本地出口 IP 地址
+			Port: 0,        // 0 表示随机端口
+		},
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}
+
+	transport := &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			return dialer.DialContext(ctx, network, addr)
+		},
+	}
+
+	return &Client{
+		APIKey:    apiKey,
+		SecretKey: secretKey,
+		BaseURL:   getAPIEndpoint(),
+		UserAgent: "Binance/golang",
+		HTTPClient: &http.Client{
+			Transport: transport,
+		},
+		Logger: log.New(os.Stderr, "Binance-golang ", log.LstdFlags),
 	}
 }
 

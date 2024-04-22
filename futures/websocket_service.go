@@ -599,7 +599,7 @@ func WsAllBookTickerServe(handler WsBookTickerHandler, errHandler ErrHandler) (d
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
-// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is for multiple symbols
+// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is using assigned IP to connect ws service
 func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := getCombinedEndpoint()
 	for _, s := range symbols {
@@ -608,6 +608,28 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 	endpoint = endpoint[:len(endpoint)-1]
 
 	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServe is similar to WsCombinedBookTickerServe, but it is for multiple symbols
+func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
 		err := json.Unmarshal(message, event)
