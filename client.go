@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"fmt"
+	"github.com/dictxwang/go-binance/portfolio"
 	"io/ioutil"
 	"log"
 	"net"
@@ -105,7 +106,7 @@ type AccountType string
 
 // Endpoints
 var (
-	BaseAPIMainURL    = "https://api.binance.com"
+	BaseAPIMainURL    = "http://api.binance.com"
 	BaseAPITestnetURL = "https://testnet.binance.vision"
 )
 
@@ -353,6 +354,11 @@ func NewDeliveryClient(apiKey, secretKey string) *delivery.Client {
 // NewOptionsClient initialize client for options API
 func NewOptionsClient(apiKey, secretKey string) *options.Client {
 	return options.NewClient(apiKey, secretKey)
+}
+
+// NewPortfolioClient initialize client for portfolio API
+func NewPortfolioClient(apiKey, secretKey string) *portfolio.Client {
+	return portfolio.NewClient(apiKey, secretKey)
 }
 
 type doFunc func(req *http.Request) (*http.Response, error)
