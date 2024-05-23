@@ -19,26 +19,30 @@ import (
 	"time"
 )
 
-//// SideType define side type of order
-//type SideType string
-//
-//// PositionSideType define position side type of order
-//type PositionSideType string
-//
-//// OrderType define order type
-//type OrderType string
-//
-//// TimeInForceType define time in force type of order
-//type TimeInForceType string
-//
-//// NewOrderRespType define response JSON verbosity
-//type NewOrderRespType string
-//
-//// OrderExecutionType define order execution type
-//type OrderExecutionType string
-//
-//// OrderStatusType define order status type
-//type OrderStatusType string
+// SideType define side type of order
+type SideType string
+
+// PositionSideType define position side type of order
+type PositionSideType string
+
+// OrderType define order type
+type OrderType string
+
+// TimeInForceType define time in force type of order
+type TimeInForceType string
+
+// NewOrderRespType define response JSON verbosity
+type NewOrderRespType string
+
+// SelfTradePreventionMode define response JSON verbosity
+type SelfTradePreventionMode string
+
+// OrderExecutionType define order execution type
+type OrderExecutionType string
+
+// OrderStatusType define order status type
+type OrderStatusType string
+
 //
 //// SymbolType define symbol type
 //type SymbolType string
@@ -60,12 +64,13 @@ import (
 //
 //// ContractType define contract type
 //type ContractType string
-//
-//// UserDataEventType define user data event type
-//type UserDataEventType string
-//
-//// UserDataEventReasonType define reason type for user data event
-//type UserDataEventReasonType string
+
+// UserDataEventType define user data event type
+type UserDataEventType string
+
+// UserDataEventReasonType define reason type for user data event
+type UserDataEventReasonType string
+
 //
 //// ForceOrderCloseType define reason type for force order
 //type ForceOrderCloseType string
@@ -78,43 +83,42 @@ const (
 
 // Global enums
 const (
-	//SideTypeBuy  SideType = "BUY"
-	//SideTypeSell SideType = "SELL"
-	//
-	//PositionSideTypeBoth  PositionSideType = "BOTH"
-	//PositionSideTypeLong  PositionSideType = "LONG"
-	//PositionSideTypeShort PositionSideType = "SHORT"
-	//
-	//OrderTypeLimit              OrderType = "LIMIT"
-	//OrderTypeMarket             OrderType = "MARKET"
-	//OrderTypeStop               OrderType = "STOP"
-	//OrderTypeStopMarket         OrderType = "STOP_MARKET"
-	//OrderTypeTakeProfit         OrderType = "TAKE_PROFIT"
-	//OrderTypeTakeProfitMarket   OrderType = "TAKE_PROFIT_MARKET"
-	//OrderTypeTrailingStopMarket OrderType = "TRAILING_STOP_MARKET"
-	//
-	//TimeInForceTypeGTC TimeInForceType = "GTC" // Good Till Cancel
-	//TimeInForceTypeIOC TimeInForceType = "IOC" // Immediate or Cancel
-	//TimeInForceTypeFOK TimeInForceType = "FOK" // Fill or Kill
-	//TimeInForceTypeGTX TimeInForceType = "GTX" // Good Till Crossing (Post Only)
-	//
-	//NewOrderRespTypeACK    NewOrderRespType = "ACK"
-	//NewOrderRespTypeRESULT NewOrderRespType = "RESULT"
-	//
-	//OrderExecutionTypeNew         OrderExecutionType = "NEW"
-	//OrderExecutionTypePartialFill OrderExecutionType = "PARTIAL_FILL"
-	//OrderExecutionTypeFill        OrderExecutionType = "FILL"
-	//OrderExecutionTypeCanceled    OrderExecutionType = "CANCELED"
-	//OrderExecutionTypeCalculated  OrderExecutionType = "CALCULATED"
-	//OrderExecutionTypeExpired     OrderExecutionType = "EXPIRED"
-	//OrderExecutionTypeTrade       OrderExecutionType = "TRADE"
-	//
-	//OrderStatusTypeNew             OrderStatusType = "NEW"
-	//OrderStatusTypePartiallyFilled OrderStatusType = "PARTIALLY_FILLED"
-	//OrderStatusTypeFilled          OrderStatusType = "FILLED"
-	//OrderStatusTypeCanceled        OrderStatusType = "CANCELED"
+	SideTypeBuy  SideType = "BUY"
+	SideTypeSell SideType = "SELL"
+
+	PositionSideTypeBoth  PositionSideType = "BOTH"
+	PositionSideTypeLong  PositionSideType = "LONG"
+	PositionSideTypeShort PositionSideType = "SHORT"
+
+	OrderTypeLimit       OrderType = "LIMIT"
+	OrderTypeMarket      OrderType = "MARKET"
+	OrderTypeLiquidation OrderType = "LIQUIDATION"
+
+	TimeInForceTypeGTC TimeInForceType = "GTC" // Good Till Cancel
+	TimeInForceTypeIOC TimeInForceType = "IOC" // Immediate or Cancel
+	TimeInForceTypeFOK TimeInForceType = "FOK" // Fill or Kill
+	TimeInForceTypeGTX TimeInForceType = "GTX" // Good Till Crossing (Post Only)
+
+	NewOrderRespTypeACK    NewOrderRespType = "ACK"
+	NewOrderRespTypeRESULT NewOrderRespType = "RESULT"
+
+	SelfTradePreventionModeNONE SelfTradePreventionMode = "NONE"
+	SelfTradePreventionModeET   SelfTradePreventionMode = "EXPIRE_TAKER"
+	SelfTradePreventionModeEM   SelfTradePreventionMode = "EXPIRE_MAKER"
+	SelfTradePreventionModeEB   SelfTradePreventionMode = "EXPIRE_BOTH"
+
+	OrderExecutionTypeNew        OrderExecutionType = "NEW"
+	OrderExecutionTypeCanceled   OrderExecutionType = "CANCELED"
+	OrderExecutionTypeCalculated OrderExecutionType = "CALCULATED"
+	OrderExecutionTypeExpired    OrderExecutionType = "EXPIRED"
+	OrderExecutionTypeTrade      OrderExecutionType = "TRADE"
+
+	OrderStatusTypeNew             OrderStatusType = "NEW"
+	OrderStatusTypePartiallyFilled OrderStatusType = "PARTIALLY_FILLED"
+	OrderStatusTypeFilled          OrderStatusType = "FILLED"
+	OrderStatusTypeCanceled        OrderStatusType = "CANCELED"
+	OrderStatusTypeExpired         OrderStatusType = "EXPIRED"
 	//OrderStatusTypeRejected        OrderStatusType = "REJECTED"
-	//OrderStatusTypeExpired         OrderStatusType = "EXPIRED"
 	//OrderStatusTypeNewInsurance    OrderStatusType = "NEW_INSURANCE"
 	//OrderStatusTypeNewADL          OrderStatusType = "NEW_ADL"
 	//
@@ -147,27 +151,27 @@ const (
 	//MarginTypeCrossed  MarginType = "CROSSED"
 	//
 	//ContractTypePerpetual ContractType = "PERPETUAL"
-	//
-	//UserDataEventTypeListenKeyExpired    UserDataEventType = "listenKeyExpired"
+
+	UserDataEventTypeListenKeyExpired UserDataEventType = "listenKeyExpired"
+	UserDataEventTypeAccountUpdate    UserDataEventType = "ACCOUNT_UPDATE"
+	UserDataEventTypeOrderTradeUpdate UserDataEventType = "ORDER_TRADE_UPDATE"
 	//UserDataEventTypeMarginCall          UserDataEventType = "MARGIN_CALL"
-	//UserDataEventTypeAccountUpdate       UserDataEventType = "ACCOUNT_UPDATE"
-	//UserDataEventTypeOrderTradeUpdate    UserDataEventType = "ORDER_TRADE_UPDATE"
 	//UserDataEventTypeAccountConfigUpdate UserDataEventType = "ACCOUNT_CONFIG_UPDATE"
-	//
-	//UserDataEventReasonTypeDeposit             UserDataEventReasonType = "DEPOSIT"
-	//UserDataEventReasonTypeWithdraw            UserDataEventReasonType = "WITHDRAW"
-	//UserDataEventReasonTypeOrder               UserDataEventReasonType = "ORDER"
-	//UserDataEventReasonTypeFundingFee          UserDataEventReasonType = "FUNDING_FEE"
-	//UserDataEventReasonTypeWithdrawReject      UserDataEventReasonType = "WITHDRAW_REJECT"
-	//UserDataEventReasonTypeAdjustment          UserDataEventReasonType = "ADJUSTMENT"
-	//UserDataEventReasonTypeInsuranceClear      UserDataEventReasonType = "INSURANCE_CLEAR"
-	//UserDataEventReasonTypeAdminDeposit        UserDataEventReasonType = "ADMIN_DEPOSIT"
-	//UserDataEventReasonTypeAdminWithdraw       UserDataEventReasonType = "ADMIN_WITHDRAW"
-	//UserDataEventReasonTypeMarginTransfer      UserDataEventReasonType = "MARGIN_TRANSFER"
-	//UserDataEventReasonTypeMarginTypeChange    UserDataEventReasonType = "MARGIN_TYPE_CHANGE"
-	//UserDataEventReasonTypeAssetTransfer       UserDataEventReasonType = "ASSET_TRANSFER"
-	//UserDataEventReasonTypeOptionsPremiumFee   UserDataEventReasonType = "OPTIONS_PREMIUM_FEE"
-	//UserDataEventReasonTypeOptionsSettleProfit UserDataEventReasonType = "OPTIONS_SETTLE_PROFIT"
+
+	UserDataEventReasonTypeDeposit             UserDataEventReasonType = "DEPOSIT"
+	UserDataEventReasonTypeWithdraw            UserDataEventReasonType = "WITHDRAW"
+	UserDataEventReasonTypeOrder               UserDataEventReasonType = "ORDER"
+	UserDataEventReasonTypeFundingFee          UserDataEventReasonType = "FUNDING_FEE"
+	UserDataEventReasonTypeWithdrawReject      UserDataEventReasonType = "WITHDRAW_REJECT"
+	UserDataEventReasonTypeAdjustment          UserDataEventReasonType = "ADJUSTMENT"
+	UserDataEventReasonTypeInsuranceClear      UserDataEventReasonType = "INSURANCE_CLEAR"
+	UserDataEventReasonTypeAdminDeposit        UserDataEventReasonType = "ADMIN_DEPOSIT"
+	UserDataEventReasonTypeAdminWithdraw       UserDataEventReasonType = "ADMIN_WITHDRAW"
+	UserDataEventReasonTypeMarginTransfer      UserDataEventReasonType = "MARGIN_TRANSFER"
+	UserDataEventReasonTypeMarginTypeChange    UserDataEventReasonType = "MARGIN_TYPE_CHANGE"
+	UserDataEventReasonTypeAssetTransfer       UserDataEventReasonType = "ASSET_TRANSFER"
+	UserDataEventReasonTypeOptionsPremiumFee   UserDataEventReasonType = "OPTIONS_PREMIUM_FEE"
+	UserDataEventReasonTypeOptionsSettleProfit UserDataEventReasonType = "OPTIONS_SETTLE_PROFIT"
 	//
 	//ForceOrderCloseTypeLiquidation ForceOrderCloseType = "LIQUIDATION"
 	//ForceOrderCloseTypeADL         ForceOrderCloseType = "ADL"
@@ -399,19 +403,9 @@ func (c *Client) SetApiEndpoint(url string) *Client {
 	return c
 }
 
-// NewUmCommissionRateService init um commission rate service
-func (c *Client) NewUmCommissionRateService() *UmCommissionRateService {
-	return &UmCommissionRateService{c: c}
-}
-
 // NewCmCommissionRateService init cm commission rate service
 func (c *Client) NewCmCommissionRateService() *CmCommissionRateService {
 	return &CmCommissionRateService{c: c}
-}
-
-// NewUmPositionSideDualService init um position side dual service
-func (c *Client) NewUmPositionSideDualService() *UmPositionSideDualService {
-	return &UmPositionSideDualService{c: c}
 }
 
 // NewCmPositionSideDualService init cm position side dual service
@@ -419,12 +413,62 @@ func (c *Client) NewCmPositionSideDualService() *CmPositionSideDualService {
 	return &CmPositionSideDualService{c: c}
 }
 
+// NewCmSetLeverageService init cm set leverage service
+func (c *Client) NewCmSetLeverageService() *CmSetLeverageService {
+	return &CmSetLeverageService{c: c}
+}
+
+// NewUmCommissionRateService init um commission rate service
+func (c *Client) NewUmCommissionRateService() *UmCommissionRateService {
+	return &UmCommissionRateService{c: c}
+}
+
+// NewUmCreateOrderService init cancel all um open orders service
+func (c *Client) NewUmCreateOrderService() *UmCreateOrderService {
+	return &UmCreateOrderService{c: c}
+}
+
+// NewListOpenOrdersService init list open orders service
+func (c *Client) NewUmListOpenOrdersService() *UmListOpenOrdersService {
+	return &UmListOpenOrdersService{c: c}
+}
+
+// NewUmCancelAllOpenOrdersService init cancel all um open orders service
+func (c *Client) NewUmCancelOrderService() *UmCancelOrderService {
+	return &UmCancelOrderService{c: c}
+}
+
+// NewUmCancelAllOpenOrdersService init cancel all um open orders service
+func (c *Client) NewUmCancelAllOpenOrdersService() *UmCancelAllOpenOrdersService {
+	return &UmCancelAllOpenOrdersService{c: c}
+}
+
+// NewUmPositionSideDualService init um position side dual service
+func (c *Client) NewUmPositionSideDualService() *UmPositionSideDualService {
+	return &UmPositionSideDualService{c: c}
+}
+
 // NewUmSetLeverageService init um set leverage service
 func (c *Client) NewUmSetLeverageService() *UmSetLeverageService {
 	return &UmSetLeverageService{c: c}
 }
 
-// NewCmSetLeverageService init cm set leverage service
-func (c *Client) NewCmSetLeverageService() *CmSetLeverageService {
-	return &CmSetLeverageService{c: c}
+// NewUmGetAccountService init getting account service
+func (c *Client) NewUmGetAccountService() *UmGetAccountService {
+	return &UmGetAccountService{c: c}
+}
+
+// NewStartUserStreamService init starting user stream service
+func (c *Client) NewStartUserStreamService() *StartUserStreamService {
+	return &StartUserStreamService{c: c}
+}
+
+// NewKeepaliveUserStreamService init keep alive user stream service
+func (c *Client) NewKeepaliveUserStreamService() *KeepaliveUserStreamService {
+	return &KeepaliveUserStreamService{c: c}
+}
+
+// NewCloseUserStreamService init closing user stream service
+func (c *Client) NewCloseUserStreamService() *CloseUserStreamService {
+	return &CloseUserStreamService{c: c}
 }
