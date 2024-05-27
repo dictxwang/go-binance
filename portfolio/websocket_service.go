@@ -8,8 +8,8 @@ import (
 
 // Endpoints
 const (
-	baseWsMainUrl    = "wss://fstream.binance.com/pm"
-	baseWsTestnetUrl = "wss://fstream.binance.com/pm"
+	baseWsMainUrl    = "wss://fstream.binance.com/pm/ws"
+	baseWsTestnetUrl = "wss://fstream.binance.com/pm/ws"
 )
 
 var (
