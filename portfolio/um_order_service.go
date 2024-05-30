@@ -158,7 +158,7 @@ func (s *UmCreateOrderService) createOrder(ctx context.Context, endpoint string,
 
 // Do send request
 func (s *UmCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *CreateOrderResponse, err error) {
-	data, _, err := s.createOrder(ctx, "/fapi/v1/order", opts...)
+	data, _, err := s.createOrder(ctx, "/papi/v1/um/order", opts...)
 	if err != nil {
 		return nil, err
 	}
