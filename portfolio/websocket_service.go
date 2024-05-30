@@ -106,6 +106,7 @@ func UmWsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler E
 	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
+		fmt.Println(message)
 		event := new(WsUserDataEvent)
 		err := json.Unmarshal(message, event)
 		if err != nil {
