@@ -43,6 +43,9 @@ type OrderExecutionType string
 // OrderStatusType define order status type
 type OrderStatusType string
 
+// BusinessUnit define business unit
+type BusinessUnit string
+
 //
 //// SymbolType define symbol type
 //type SymbolType string
@@ -121,6 +124,10 @@ const (
 	//OrderStatusTypeRejected        OrderStatusType = "REJECTED"
 	//OrderStatusTypeNewInsurance    OrderStatusType = "NEW_INSURANCE"
 	//OrderStatusTypeNewADL          OrderStatusType = "NEW_ADL"
+
+	UmBusinessUnit BusinessUnit = "UM"
+	CmBusinessUnit BusinessUnit = "CM"
+
 	//
 	//SymbolTypeFuture SymbolType = "FUTURE"
 	//

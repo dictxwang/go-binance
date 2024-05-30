@@ -91,7 +91,7 @@ type WsOrderTradeUpdate struct {
 // WsUserDataEvent define user data event
 type WsUserDataEvent struct {
 	Event            UserDataEventType  `json:"e"`
-	BusinessUnit     int64              `json:"fs"`
+	BusinessUnit     BusinessUnit       `json:"fs"`
 	Time             int64              `json:"E"`
 	TransactionTime  int64              `json:"T"`
 	AccountAlias     string             `json:"i"`
