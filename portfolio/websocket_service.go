@@ -45,7 +45,7 @@ type WsPosition struct {
 	AccumulatedRealized string           `json:"cr"`
 	UnrealizedPnL       string           `json:"up"`
 	Side                PositionSideType `json:"ps"`
-	BreakEvenPrice      string           `json:"bep"`
+	BreakEvenPrice      float64          `json:"bep"`
 }
 
 // WsAccountUpdate define account update
@@ -106,7 +106,6 @@ func UmWsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler E
 	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
-		fmt.Println(string(message))
 		event := new(WsUserDataEvent)
 		err := json.Unmarshal(message, event)
 		if err != nil {
