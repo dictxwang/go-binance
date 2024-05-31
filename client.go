@@ -1068,3 +1068,11 @@ func (c *Client) NewSubAccountFuturesSummaryV1Service() *SubAccountFuturesSummar
 func (c *Client) NewSubAccountFuturesTransferV1Service() *SubAccountFuturesTransferV1Service {
 	return &SubAccountFuturesTransferV1Service{c: c}
 }
+
+func (c *Client) NewCrossMarginDataService() *CrossMarginDataService {
+	return &CrossMarginDataService{c: c}
+}
+
+func (c *Client) NewInterestHourlyService() *InterestHourlyService {
+	return &InterestHourlyService{c: c}
+}
