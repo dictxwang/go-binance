@@ -134,3 +134,47 @@ func UmWsUserDataServeWithIP(ip string, listenKey string, handler WsUserDataHand
 	}
 	return wsServe(cfg, wsHandler, errHandler)
 }
+
+// WsPackedUserDataEvent define user data event
+type WsPackedUserDataEvent struct {
+	EventType    string `json:"e"`
+	EventContent string `json:"EventContent,omitempty"`
+}
+
+// WsPackedUserDataHandler handle WsPackedUserDataEvent
+type WsPackedUserDataHandler func(event *WsPackedUserDataEvent)
+
+func UmWsPackedUserDataServe(listenKey string, handler WsPackedUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		fmt.Println(string(message))
+		event := new(WsPackedUserDataEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		event.EventContent = string(message)
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+func UmWsPackedUserDataServeWithIP(ip string, listenKey string, handler WsPackedUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
+
+	wsHandler := func(message []byte) {
+		event := new(WsPackedUserDataEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		event.EventContent = string(message)
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
