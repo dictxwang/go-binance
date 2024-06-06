@@ -10,10 +10,12 @@ import (
 
 // Endpoints
 const (
-	baseWsMainUrl          = "wss://fstream.binance.com/ws"
-	baseWsTestnetUrl       = "wss://stream.binancefuture.com/ws"
-	baseCombinedMainURL    = "wss://fstream.binance.com/stream?streams="
-	baseCombinedTestnetURL = "wss://stream.binancefuture.com/stream?streams="
+	baseWsMainUrl               = "wss://fstream.binance.com/ws"
+	baseWsTestnetUrl            = "wss://stream.binancefuture.com/ws"
+	baseCombinedMainURL         = "wss://fstream.binance.com/stream?streams="
+	baseCombinedTestnetURL      = "wss://stream.binancefuture.com/stream?streams="
+	baseInternalWsMainURL       = "wss://fstream-mm.binance.com/ws"
+	baseInternalCombinedMainURL = "wss://fstream-mm.binance.com/stream?streams="
 )
 
 var (
@@ -22,13 +24,17 @@ var (
 	// WebsocketKeepalive enables sending ping/pong messages to check the connection stability
 	WebsocketKeepalive = false
 	// UseTestnet switch all the WS streams from production to the testnet
-	UseTestnet = false
+	UseTestnet  = false
+	UseIntranet = false
 )
 
 // getWsEndpoint return the base endpoint of the WS according the UseTestnet flag
 func getWsEndpoint() string {
 	if UseTestnet {
 		return baseWsTestnetUrl
+	}
+	if UseIntranet {
+		return baseInternalWsMainURL
 	}
 	return baseWsMainUrl
 }
@@ -37,6 +43,9 @@ func getWsEndpoint() string {
 func getCombinedEndpoint() string {
 	if UseTestnet {
 		return baseCombinedTestnetURL
+	}
+	if UseIntranet {
+		return baseInternalCombinedMainURL
 	}
 	return baseCombinedMainURL
 }
