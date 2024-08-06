@@ -16,6 +16,9 @@ const (
 	baseCombinedTestnetURL      = "wss://stream.binancefuture.com/stream?streams="
 	baseInternalWsMainURL       = "wss://fstream-mm.binance.com/ws"
 	baseInternalCombinedMainURL = "wss://fstream-mm.binance.com/stream?streams="
+	baseTradingWsTestUrl        = "wss://testnet.binancefuture.com/ws-fapi/v1?returnRateLimits=false"
+	baseTradingWsUrl            = "wss://ws-fapi.binance.com/ws-fapi/v1?returnRateLimits=false"
+	baseInternalTradingWsUrl    = "wss://ws-fapi-mm.binance.com/ws-fapi/v1?returnRateLimits=false"
 )
 
 var (
@@ -48,6 +51,17 @@ func getCombinedEndpoint() string {
 		return baseInternalCombinedMainURL
 	}
 	return baseCombinedMainURL
+}
+
+// getTradingWsEndpoint return the base endpoint of the WS according the UseTestnet flag
+func getTradingWsEndpoint() string {
+	if UseTestnet {
+		return baseTradingWsTestUrl
+	}
+	if UseIntranet {
+		return baseInternalTradingWsUrl
+	}
+	return baseTradingWsUrl
 }
 
 // WsAggTradeEvent define websocket aggTrde event.
