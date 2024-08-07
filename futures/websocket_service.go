@@ -1130,3 +1130,21 @@ func WsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler Err
 	}
 	return wsServe(cfg, wsHandler, errHandler)
 }
+
+// WsUserDataServe serve user data handler with listen key
+func WsUserDataServeWithIP(ip, listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
+
+	wsHandler := func(message []byte) {
+		event := new(WsUserDataEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
