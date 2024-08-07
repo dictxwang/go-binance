@@ -74,8 +74,9 @@ type ForceOrderCloseType string
 
 // Endpoints
 const (
-	baseApiMainUrl    = "https://fapi.binance.com"
-	baseApiTestnetUrl = "https://testnet.binancefuture.com"
+	baseApiMainUrl     = "https://fapi.binance.com"
+	baseApiTestnetUrl  = "https://testnet.binancefuture.com"
+	baseApiInternalUrl = "https://fapi-mm.binance.com"
 )
 
 // Global enums
@@ -195,6 +196,9 @@ func newJSON(data []byte) (j *simplejson.Json, err error) {
 func getApiEndpoint() string {
 	if UseTestnet {
 		return baseApiTestnetUrl
+	}
+	if UseIntranet {
+		return baseApiInternalUrl
 	}
 	return baseApiMainUrl
 }
