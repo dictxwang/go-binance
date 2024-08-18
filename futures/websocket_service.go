@@ -1100,6 +1100,7 @@ type WsPosition struct {
 	MarginType                MarginType       `json:"mt"`
 	IsolatedWallet            string           `json:"iw"`
 	EntryPrice                string           `json:"ep"`
+	BreakEvenPrice            string           `json:"bep"`
 	MarkPrice                 string           `json:"mp"`
 	UnrealizedPnL             string           `json:"up"`
 	AccumulatedRealized       string           `json:"cr"`
