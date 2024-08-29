@@ -622,7 +622,7 @@ func WsAllBookTickerServe(handler WsBookTickerHandler, errHandler ErrHandler) (d
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
-// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is using assigned IP to connect ws service
+// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is for multiple symbols
 func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := getCombinedEndpoint()
 	for _, s := range symbols {
@@ -643,7 +643,7 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
-// WsCombinedBookTickerServeWithIP is similar to WsCombinedBookTickerServe, but it is for multiple symbols
+// WsCombinedBookTickerServeWithIP is similar to WsCombinedBookTickerServe,  but it is using assigned IP to connect ws service
 func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := getCombinedEndpoint()
 	for _, s := range symbols {
