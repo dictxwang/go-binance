@@ -6,41 +6,6 @@ import (
 	"net/http"
 )
 
-// UmGetBalanceService get account balance
-type UmGetBalanceService struct {
-	c *Client
-}
-
-// Do send request
-func (s *UmGetBalanceService) Do(ctx context.Context, opts ...RequestOption) (res []*UmBalance, err error) {
-	r := &request{
-		method:   http.MethodGet,
-		endpoint: "/papi/v1/um/account",
-		secType:  secTypeSigned,
-	}
-	data, _, err := s.c.callAPI(ctx, r, opts...)
-	if err != nil {
-		return []*UmBalance{}, err
-	}
-	res = make([]*UmBalance, 0)
-	err = json.Unmarshal(data, &res)
-	if err != nil {
-		return []*UmBalance{}, err
-	}
-	return res, nil
-}
-
-// UmBalance define user balance of your account
-type UmBalance struct {
-	AccountAlias       string `json:"accountAlias"`
-	Asset              string `json:"asset"`
-	Balance            string `json:"balance"`
-	CrossWalletBalance string `json:"crossWalletBalance"`
-	CrossUnPnl         string `json:"crossUnPnl"`
-	AvailableBalance   string `json:"availableBalance"`
-	MaxWithdrawAmount  string `json:"maxWithdrawAmount"`
-}
-
 // UmGetAccountService get account info
 type UmGetAccountService struct {
 	c *Client

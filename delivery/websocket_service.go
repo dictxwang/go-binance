@@ -10,8 +10,11 @@ import (
 
 // Endpoints
 const (
-	baseWsMainUrl    = "wss://dstream.binance.com/ws"
-	baseWsTestnetUrl = "wss://dstream.binancefuture.com/ws"
+	baseWsMainUrl                 = "wss://dstream.binance.com/ws"
+	baseWsTestnetUrl              = "wss://dstream.binancefuture.com/ws"
+	baseWsInternalMainURL         = "wss://dstream-mm.binance.com/ws"
+	baseWsCombinedMainURL         = "wss://dstream.binance.com/stream?streams="
+	baseWsInternalCombinedMainURL = "wss://dstream-mm.binance.com/stream?streams="
 )
 
 var (
@@ -21,6 +24,8 @@ var (
 	WebsocketKeepalive = false
 	// UseTestnet switch all the WS streams from production to the testnet
 	UseTestnet = false
+	// UseIntranet switch all the WS streams from public to the colo intranet
+	UseIntranet = false
 )
 
 // getWsEndpoint return the base endpoint of the WS according the UseTestnet flag
@@ -28,7 +33,18 @@ func getWsEndpoint() string {
 	if UseTestnet {
 		return baseWsTestnetUrl
 	}
+	if UseIntranet {
+		return baseWsInternalMainURL
+	}
 	return baseWsMainUrl
+}
+
+// getCombinedEndpoint return the base endpoint of the combined stream according the UseTestnet flag
+func getCombinedEndpoint() string {
+	if UseIntranet {
+		return baseWsInternalCombinedMainURL
+	}
+	return baseWsCombinedMainURL
 }
 
 // WsAggTradeEvent define websocket aggTrde event.
@@ -453,6 +469,11 @@ type WsBookTickerEvent struct {
 	Time            int64  `json:"E"`
 }
 
+type WsCombinedBookTickerEvent struct {
+	Data   *WsBookTickerEvent `json:"data"`
+	Stream string             `json:"stream"`
+}
+
 // WsBookTickerHandler handle websocket that pushes updates to the best bid or ask price or quantity in real-time for a specified symbol.
 type WsBookTickerHandler func(event *WsBookTickerEvent)
 
@@ -484,6 +505,49 @@ func WsAllBookTickerServe(handler WsBookTickerHandler, errHandler ErrHandler) (d
 			return
 		}
 		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is for multiple symbols
+func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, &event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServeWithIP is similar to WsCombinedBookTickerServe,  but it is using assigned IP to connect ws service
+func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
 	}
 	return wsServe(cfg, wsHandler, errHandler)
 }

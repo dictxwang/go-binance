@@ -16,12 +16,17 @@ type ErrHandler func(err error)
 // WsConfig webservice configuration
 type WsConfig struct {
 	Endpoint string
+	IP       string
 }
 
 func newWsConfig(endpoint string) *WsConfig {
 	return &WsConfig{
 		Endpoint: endpoint,
 	}
+}
+
+func (cfg *WsConfig) WithIP(ip string) {
+	cfg.IP = ip
 }
 
 var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {

@@ -90,7 +90,7 @@ func (s *UmCreateOrderService) SelfTradePrevention(selfTradePreventionMode SelfT
 }
 
 // CreateOrderResponse define create order response
-type CreateOrderResponse struct {
+type UmCreateOrderResponse struct {
 	ClientOrderID           string                  `json:"clientOrderId"`           //
 	CumQty                  string                  `json:"cumQty"`                  //
 	CumQuote                string                  `json:"cumQuote"`                //
@@ -157,12 +157,12 @@ func (s *UmCreateOrderService) createOrder(ctx context.Context, endpoint string,
 }
 
 // Do send request
-func (s *UmCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *CreateOrderResponse, err error) {
+func (s *UmCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *UmCreateOrderResponse, err error) {
 	data, _, err := s.createOrder(ctx, "/papi/v1/um/order", opts...)
 	if err != nil {
 		return nil, err
 	}
-	res = new(CreateOrderResponse)
+	res = new(UmCreateOrderResponse)
 	err = json.Unmarshal(data, res)
 
 	if err != nil {

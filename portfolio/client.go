@@ -425,9 +425,45 @@ func (c *Client) NewCmSetLeverageService() *CmSetLeverageService {
 	return &CmSetLeverageService{c: c}
 }
 
+// NewCmCreateOrderService init cancel all um open orders service
+func (c *Client) NewCmCreateOrderService() *CmCreateOrderService {
+	return &CmCreateOrderService{c: c}
+}
+
+// NewCmListOpenOrdersService init list open orders service
+func (c *Client) NewCmListOpenOrdersService() *CmListOpenOrdersService {
+	return &CmListOpenOrdersService{c: c}
+}
+
+// NewCmCancelOrderService init cancel all um open orders service
+func (c *Client) NewCmCancelOrderService() *CmCancelOrderService {
+	return &CmCancelOrderService{c: c}
+}
+
+// NewCmCancelAllOpenOrdersService init cancel all um open orders service
+func (c *Client) NewCmCancelAllOpenOrdersService() *CmCancelAllOpenOrdersService {
+	return &CmCancelAllOpenOrdersService{c: c}
+}
+
+// NewCmGetAccountService init getting account service
+func (c *Client) NewCmGetAccountService() *CmGetAccountService {
+	return &CmGetAccountService{c: c}
+}
+
+// #### um
 // NewUmCommissionRateService init um commission rate service
 func (c *Client) NewUmCommissionRateService() *UmCommissionRateService {
 	return &UmCommissionRateService{c: c}
+}
+
+// NewUmPositionSideDualService init um position side dual service
+func (c *Client) NewUmPositionSideDualService() *UmPositionSideDualService {
+	return &UmPositionSideDualService{c: c}
+}
+
+// NewUmSetLeverageService init um set leverage service
+func (c *Client) NewUmSetLeverageService() *UmSetLeverageService {
+	return &UmSetLeverageService{c: c}
 }
 
 // NewUmCreateOrderService init cancel all um open orders service
@@ -448,16 +484,6 @@ func (c *Client) NewUmCancelOrderService() *UmCancelOrderService {
 // NewUmCancelAllOpenOrdersService init cancel all um open orders service
 func (c *Client) NewUmCancelAllOpenOrdersService() *UmCancelAllOpenOrdersService {
 	return &UmCancelAllOpenOrdersService{c: c}
-}
-
-// NewUmPositionSideDualService init um position side dual service
-func (c *Client) NewUmPositionSideDualService() *UmPositionSideDualService {
-	return &UmPositionSideDualService{c: c}
-}
-
-// NewUmSetLeverageService init um set leverage service
-func (c *Client) NewUmSetLeverageService() *UmSetLeverageService {
-	return &UmSetLeverageService{c: c}
 }
 
 // NewUmGetAccountService init getting account service

@@ -94,15 +94,15 @@ type WsUserDataEvent struct {
 	BusinessUnit     BusinessUnit       `json:"fs"`
 	Time             int64              `json:"E"`
 	TransactionTime  int64              `json:"T"`
-	AccountAlias     string             `json:"i"`
-	AccountUpdate    WsAccountUpdate    `json:"a"`
-	OrderTradeUpdate WsOrderTradeUpdate `json:"o"`
+	AccountAlias     string             `json:"i,omitempty"`
+	AccountUpdate    WsAccountUpdate    `json:"a,omitempty"`
+	OrderTradeUpdate WsOrderTradeUpdate `json:"o,omitempty"`
 }
 
 // WsUserDataHandler handle WsUserDataEvent
 type WsUserDataHandler func(event *WsUserDataEvent)
 
-func UmWsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+func WsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
@@ -118,7 +118,7 @@ func UmWsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler E
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
-func UmWsUserDataServeWithIP(ip string, listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+func WsUserDataServeWithIP(ip string, listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
