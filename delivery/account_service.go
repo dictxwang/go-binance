@@ -106,5 +106,7 @@ type AccountPosition struct {
 	Isolated               bool   `json:"isolated"`
 	PositionSide           string `json:"positionSide"`
 	EntryPrice             string `json:"entryPrice"`
+	BreakEvenPrice         string `json:"breakEvenPrice"`
+	UpdateTime             int64  `json:"updateTime"`
 	MaxQty                 string `json:"maxQty"`
 }

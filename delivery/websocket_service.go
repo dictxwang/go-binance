@@ -746,10 +746,11 @@ type WsPosition struct {
 	MarginType                MarginType       `json:"mt"`
 	IsolatedWallet            string           `json:"iw"`
 	EntryPrice                string           `json:"ep"`
-	MarkPrice                 string           `json:"mp"`
+	MarkPrice                 string           `json:"mp,omitempty"`
+	BreakEvenPrice            string           `json:"bep"`
 	UnrealizedPnL             string           `json:"up"`
 	AccumulatedRealized       string           `json:"cr"`
-	MaintenanceMarginRequired string           `json:"mm"`
+	MaintenanceMarginRequired string           `json:"mm,omitempty"`
 }
 
 // WsOrderTradeUpdate define order trade update
@@ -801,6 +802,23 @@ type WsUserDataHandler func(event *WsUserDataEvent)
 func WsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
 	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsUserDataEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsUserDataServeWithIP serve user data handler with specific IP
+func WsUserDataServeWithIP(ip string, listenKey string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
 	wsHandler := func(message []byte) {
 		event := new(WsUserDataEvent)
 		err := json.Unmarshal(message, event)
