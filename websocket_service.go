@@ -7,13 +7,18 @@ import (
 	"time"
 )
 
-var (
+const (
 	// Endpoints
 	BaseWsMainURL          = "wss://stream.binance.com:9443/ws"
 	BaseWsTestnetURL       = "wss://testnet.binance.vision/ws"
 	BaseCombinedMainURL    = "wss://stream.binance.com:9443/stream?streams="
 	BaseCombinedTestnetURL = "wss://testnet.binance.vision/stream?streams="
 
+	baseTradingWsTestUrl = "wss://testnet.binance.vision/ws-api/v3?returnRateLimits=false"
+	baseTradingWsUrl     = "wss://ws-api.binance.com:443/ws-api/v3?returnRateLimits=false"
+)
+
+var (
 	// WebsocketTimeout is an interval for sending ping/pong messages if WebsocketKeepalive is enabled
 	WebsocketTimeout = time.Second * 60
 	// WebsocketKeepalive enables sending ping/pong messages to check the connection stability
@@ -34,6 +39,14 @@ func getCombinedEndpoint() string {
 		return BaseCombinedTestnetURL
 	}
 	return BaseCombinedMainURL
+}
+
+// getTradingWsEndpoint return the base endpoint of the WS according the UseTestnet flag
+func getTradingWsEndpoint() string {
+	if UseTestnet {
+		return baseTradingWsTestUrl
+	}
+	return baseTradingWsUrl
 }
 
 // WsPartialDepthEvent define websocket partial depth book event
