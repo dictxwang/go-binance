@@ -539,22 +539,57 @@ type WsPlaceOrder struct {
 	TimeInForce      string  `json:"timeInForce,omitempty"`
 	NewOrderRespType string  `json:"newOrderRespType,omitempty"`
 	Timestamp        int64   `json:"timestamp"`
+	apiKey           string  `json:"apiKey"`
+	signature        string  `json:"signature"`
 }
 
 type WsCancelOrder struct {
 	Symbol            string `json:"symbol"`
-	OrderID           int64  `json:"orderId,omitempty"`
 	OrigClientOrderId string `json:"origClientOrderId,omitempty"`
 	Timestamp         int64  `json:"timestamp"`
+	apiKey            string `json:"apiKey"`
+	signature         string `json:"signature"`
 }
 
 func (c *ClientWs) PlaceOrder(order *WsPlaceOrder) error {
+
+	order.apiKey = c.apiKey
+	if order.Timestamp == 0 {
+		order.Timestamp = time.Now().UnixMilli()
+	}
 	args := s2m(order)
+
+	payload := makeQueryString(args)
+	signature, err := signPayload(payload, c.privateKey)
+
+	if err != nil {
+		fmt.Printf("Failed to sign place payload: %v", err)
+		return err
+	}
+
+	args["signature"] = signature
+
 	return c.Send("order.place", args)
 }
 
 func (c *ClientWs) CancelOrder(order *WsCancelOrder) error {
+
+	order.apiKey = c.apiKey
+	if order.Timestamp == 0 {
+		order.Timestamp = time.Now().UnixMilli()
+	}
 	args := s2m(order)
+
+	payload := makeQueryString(args)
+	signature, err := signPayload(payload, c.privateKey)
+
+	if err != nil {
+		fmt.Printf("Failed to sign cancel payload: %v", err)
+		return err
+	}
+
+	args["signature"] = signature
+
 	return c.Send("order.cancel", args)
 }
 
