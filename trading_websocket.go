@@ -270,15 +270,16 @@ func (c *ClientWs) Login() error {
 
 	method := "session.logon"
 	args := map[string]interface{}{
-		"apiKey":    c.apiKey,
-		"timestamp": time.Now().UnixMilli(), // use the current time in milliseconds
+		"apiKey":     c.apiKey,
+		"recvWindow": 5000,
+		"timestamp":  time.Now().UnixMilli(), // use the current time in milliseconds
 	}
 
 	payload := makeQueryString(args)
 	signature, err := signPayload(payload, c.privateKey)
 
 	if err != nil {
-		fmt.Printf("Failed to sign payload: %v", err)
+		fmt.Printf("Failed to sign payload: %v\n", err)
 		return err
 	}
 	args["signature"] = signature
@@ -441,6 +442,7 @@ func (c *ClientWs) receiver() error {
 		select {
 		default:
 			mt, data, err := c.conn.ReadMessage()
+
 			if err != nil {
 				return fmt.Errorf("failed to read message from ws connection, error: %v\n", err)
 			}
@@ -455,6 +457,10 @@ func (c *ClientWs) receiver() error {
 				e := &Basic{}
 				if err := json.Unmarshal(data, e); err != nil {
 					return fmt.Errorf("Failed to unmarshal message from ws, error: %v\n", err)
+				}
+
+				if e.Status != 200 {
+					fmt.Printf("Error: %+v\n", e.Error)
 				}
 				go c.process(data, e)
 			}
@@ -539,54 +545,56 @@ type WsPlaceOrder struct {
 	TimeInForce      string  `json:"timeInForce,omitempty"`
 	NewOrderRespType string  `json:"newOrderRespType,omitempty"`
 	Timestamp        int64   `json:"timestamp"`
-	apiKey           string  `json:"apiKey"`
 }
 
 type WsCancelOrder struct {
 	Symbol            string `json:"symbol"`
 	OrigClientOrderId string `json:"origClientOrderId,omitempty"`
 	Timestamp         int64  `json:"timestamp"`
-	apiKey            string `json:"apiKey"`
 }
 
 func (c *ClientWs) PlaceOrder(order *WsPlaceOrder) error {
 
-	order.apiKey = c.apiKey
 	if order.Timestamp == 0 {
 		order.Timestamp = time.Now().UnixMilli()
 	}
 	args := s2m(order)
-
-	payload := makeQueryString(args)
-	signature, err := signPayload(payload, c.privateKey)
-
-	if err != nil {
-		fmt.Printf("Failed to sign place payload: %v", err)
-		return err
-	}
-
-	args["signature"] = signature
+	//args["apiKey"] = c.apiKey
+	//args["recvWindow"] = 5000
+	//
+	//payload := makeQueryString(args)
+	//
+	//fmt.Printf("Place Query: %s\n", payload)
+	//signature, err := signPayload(payload, c.privateKey)
+	//
+	//if err != nil {
+	//	fmt.Printf("Failed to sign place payload: %v\n", err)
+	//	return err
+	//}
+	//
+	//args["signature"] = signature
 
 	return c.Send("order.place", args)
 }
 
 func (c *ClientWs) CancelOrder(order *WsCancelOrder) error {
 
-	order.apiKey = c.apiKey
 	if order.Timestamp == 0 {
 		order.Timestamp = time.Now().UnixMilli()
 	}
 	args := s2m(order)
-
-	payload := makeQueryString(args)
-	signature, err := signPayload(payload, c.privateKey)
-
-	if err != nil {
-		fmt.Printf("Failed to sign cancel payload: %v", err)
-		return err
-	}
-
-	args["signature"] = signature
+	//args["apiKey"] = c.apiKey
+	//args["recvWindow"] = 5000
+	//
+	//payload := makeQueryString(args)
+	//signature, err := signPayload(payload, c.privateKey)
+	//
+	//if err != nil {
+	//	fmt.Printf("Failed to sign cancel payload: %v\n", err)
+	//	return err
+	//}
+	//
+	//args["signature"] = signature
 
 	return c.Send("order.cancel", args)
 }
