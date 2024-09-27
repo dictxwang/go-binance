@@ -540,7 +540,6 @@ type WsPlaceOrder struct {
 	NewOrderRespType string  `json:"newOrderRespType,omitempty"`
 	Timestamp        int64   `json:"timestamp"`
 	apiKey           string  `json:"apiKey"`
-	signature        string  `json:"signature"`
 }
 
 type WsCancelOrder struct {
@@ -548,7 +547,6 @@ type WsCancelOrder struct {
 	OrigClientOrderId string `json:"origClientOrderId,omitempty"`
 	Timestamp         int64  `json:"timestamp"`
 	apiKey            string `json:"apiKey"`
-	signature         string `json:"signature"`
 }
 
 func (c *ClientWs) PlaceOrder(order *WsPlaceOrder) error {
