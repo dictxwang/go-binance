@@ -189,16 +189,18 @@ func (c *ClientWs) Connect() error {
 
 	err := c.dial()
 	if err == nil {
+
+		go func() {
+			select {
+			case <-c.StopChan:
+				c.conn.Close()
+				c.closed = true
+				return
+			}
+		}()
+
 		return nil
 	}
-
-	go func() {
-		select {
-		case <-c.StopChan:
-			c.conn.Close()
-			c.closed = true
-		}
-	}()
 
 	ticker := time.NewTicker(redialTick)
 	defer ticker.Stop()
@@ -208,6 +210,16 @@ func (c *ClientWs) Connect() error {
 		case <-ticker.C:
 			err = c.dial()
 			if err == nil {
+
+				go func() {
+					select {
+					case <-c.StopChan:
+						c.conn.Close()
+						c.closed = true
+						return
+					}
+				}()
+
 				return nil
 			}
 		}
