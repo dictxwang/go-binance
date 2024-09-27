@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 	"net"
 	"net/http"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -120,7 +119,7 @@ type ClientWs struct {
 	lastTransmit  *time.Time
 }
 
-func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) *ClientWs {
+func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*ClientWs, error) {
 	c := &ClientWs{
 		url:       getTradingWsEndpoint(),
 		apiKey:    apiKey,
@@ -136,11 +135,10 @@ func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) *Cl
 
 	privateKey, err := parsePrivateKey(c.secretKey)
 	if err != nil {
-		fmt.Errorf("failed to parse private key")
-		os.Exit(-1)
+		return nil, err
 	}
 	c.privateKey = privateKey
-	return c
+	return c, nil
 }
 
 func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan *OrderResp) {
@@ -194,6 +192,14 @@ func (c *ClientWs) Connect() error {
 		return nil
 	}
 
+	go func() {
+		select {
+		case <-c.StopChan:
+			c.conn.Close()
+			c.closed = true
+		}
+	}()
+
 	ticker := time.NewTicker(redialTick)
 	defer ticker.Stop()
 
@@ -204,10 +210,6 @@ func (c *ClientWs) Connect() error {
 			if err == nil {
 				return nil
 			}
-		case <-c.StopChan:
-			c.conn.Close()
-			c.closed = true
-			return c.handleCancel("stop")
 		}
 	}
 }
