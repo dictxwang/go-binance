@@ -37,6 +37,13 @@ type (
 		Error  *ErrorDetail           `json:"error,omitempty"`
 	}
 
+	BasicArray struct {
+		ID     string                   `json:"id"`
+		Status int                      `json:"status"`
+		Result []map[string]interface{} `json:"result,omitempty"`
+		Error  *ErrorDetail             `json:"error,omitempty"`
+	}
+
 	Error struct {
 		ID     string       `json:"id,omitempty"`
 		Status int64        `json:"status,omitempty"`
@@ -92,6 +99,12 @@ type (
 		Status int64       `json:"status,omitempty"`
 		Result OrderResult `json:"result,omitempty"`
 	}
+
+	OrderArrayResp struct {
+		ID     string        `json:"id,omitempty"`
+		Status int64         `json:"status,omitempty"`
+		Result []OrderResult `json:"result,omitempty"`
+	}
 )
 
 func (a *Basic) GetResult(k string) (interface{}, bool) {
@@ -100,23 +113,24 @@ func (a *Basic) GetResult(k string) (interface{}, bool) {
 }
 
 type ClientWs struct {
-	url           string
-	apiKey        string
-	secretKey     string
-	privateKey    crypto.PrivateKey
-	conn          *websocket.Conn
-	closed        bool
-	DoneChan      chan string
-	StopChan      chan string
-	ErrChan       chan *Error
-	LoginChan     chan *LoginResp
-	OrderRespChan chan *OrderResp
-	sendChan      chan []byte
-	AuthRequested *time.Time
-	Authorized    bool
-	LocalIP       string
-	ServiceIP     string
-	lastTransmit  *time.Time
+	url                string
+	apiKey             string
+	secretKey          string
+	privateKey         crypto.PrivateKey
+	conn               *websocket.Conn
+	closed             bool
+	DoneChan           chan string
+	StopChan           chan string
+	ErrChan            chan *Error
+	LoginChan          chan *LoginResp
+	OrderRespChan      chan *OrderResp
+	OrderArrayRespChan chan *OrderArrayResp
+	sendChan           chan []byte
+	AuthRequested      *time.Time
+	Authorized         bool
+	LocalIP            string
+	ServiceIP          string
+	lastTransmit       *time.Time
 }
 
 func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*ClientWs, error) {
@@ -141,10 +155,11 @@ func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*C
 	return c, nil
 }
 
-func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan *OrderResp) {
+func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan *OrderResp, osArrayCh chan *OrderArrayResp) {
 	c.ErrChan = errCh
 	c.LoginChan = lCh
 	c.OrderRespChan = osCh
+	c.OrderArrayRespChan = osArrayCh
 }
 
 func (c *ClientWs) Send(method string, args map[string]interface{}, extras ...map[string]string) error {
@@ -453,16 +468,31 @@ func (c *ClientWs) receiver() error {
 			if mt == websocket.TextMessage && string(data) != "pong" {
 				//fmt.Printf("Raw JSON data: %s\n", data)
 
-				// Attempt to unmarshal into Basic struct
-				e := &Basic{}
-				if err := json.Unmarshal(data, e); err != nil {
-					return fmt.Errorf("Failed to unmarshal message from ws, error: %v\n", err)
-				}
+				if strings.Contains(string(data), "\"result\": [") ||
+					strings.Contains(string(data), "\"result\":[") {
+					// result是列表结构
+					e := &BasicArray{}
+					if err := json.Unmarshal(data, e); err != nil {
+						return fmt.Errorf("Failed to unmarshal message from ws, error: %v\n", err)
+					}
 
-				if e.Status != 200 {
-					fmt.Printf("Error: %+v\n", e.Error)
+					if e.Status != 200 {
+						fmt.Printf("Error: %+v\n", e.Error)
+					}
+					go c.processArray(data, e)
+
+				} else {
+					// Attempt to unmarshal into Basic struct
+					e := &Basic{}
+					if err := json.Unmarshal(data, e); err != nil {
+						return fmt.Errorf("Failed to unmarshal message from ws, error: %v\n", err)
+					}
+
+					if e.Status != 200 {
+						fmt.Printf("Error: %+v\n", e.Error)
+					}
+					go c.process(data, e)
 				}
-				go c.process(data, e)
 			}
 		}
 	}
@@ -535,6 +565,34 @@ func (c *ClientWs) process(data []byte, e *Basic) bool {
 	return false
 }
 
+func (c *ClientWs) processArray(data []byte, e *BasicArray) bool {
+
+	if e.Error != nil {
+		e := Error{}
+		_ = json.Unmarshal(data, &e)
+		go func() {
+			if c.ErrChan != nil {
+				c.ErrChan <- &e
+			}
+		}()
+		return true
+	}
+
+	if e.Result != nil {
+		eRes := OrderArrayResp{}
+		_ = json.Unmarshal(data, &eRes)
+		go func() {
+			if c.OrderArrayRespChan != nil {
+				c.OrderArrayRespChan <- &eRes
+			}
+		}()
+	} else {
+		return false
+	}
+
+	return false
+}
+
 type WsPlaceOrder struct {
 	NewClientOrderId string  `json:"newClientOrderId"`
 	Symbol           string  `json:"symbol"`
@@ -551,6 +609,11 @@ type WsCancelOrder struct {
 	Symbol            string `json:"symbol"`
 	OrigClientOrderId string `json:"origClientOrderId,omitempty"`
 	Timestamp         int64  `json:"timestamp"`
+}
+
+type WsCancelAll struct {
+	Symbol    string `json:"symbol"`
+	Timestamp int64  `json:"timestamp"`
 }
 
 func (c *ClientWs) PlaceOrder(order *WsPlaceOrder) error {
@@ -597,6 +660,16 @@ func (c *ClientWs) CancelOrder(order *WsCancelOrder) error {
 	//args["signature"] = signature
 
 	return c.Send("order.cancel", args)
+}
+
+func (c *ClientWs) CancelAllOpenOrders(order *WsCancelAll) error {
+
+	if order.Timestamp == 0 {
+		order.Timestamp = time.Now().UnixMilli()
+	}
+	args := s2m(order)
+
+	return c.Send("openOrders.cancelAll", args)
 }
 
 func s2m(i interface{}) map[string]interface{} {
