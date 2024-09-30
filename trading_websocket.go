@@ -131,6 +131,7 @@ type ClientWs struct {
 	LocalIP            string
 	ServiceIP          string
 	lastTransmit       *time.Time
+	resolver           *net.Resolver
 }
 
 func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*ClientWs, error) {
@@ -153,6 +154,10 @@ func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*C
 	}
 	c.privateKey = privateKey
 	return c, nil
+}
+
+func (c *ClientWs) SetResolver(resolver *net.Resolver) {
+	c.resolver = resolver
 }
 
 func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan *OrderResp, osArrayCh chan *OrderArrayResp) {
@@ -324,8 +329,17 @@ func (c *ClientWs) dial() error {
 				if err != nil {
 					return nil, err
 				}
-				d := net.Dialer{
-					LocalAddr: localAddr,
+				var d net.Dialer
+				if c.resolver == nil {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  net.DefaultResolver,
+					}
+				} else {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  c.resolver,
+					}
 				}
 				return d.Dial(network, addr)
 			},
