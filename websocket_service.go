@@ -643,6 +643,60 @@ func WsUserDataServe(listenKey string, handler WsUserDataHandler, errHandler Err
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
+// WsUserDataServeWithIp serve user data handler with listen key through local address
+func WsUserDataServeWithIp(listenKey string, localIP string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/%s", getWsEndpoint(), listenKey)
+	cfg := newWsConfig(endpoint)
+	if localIP != "" {
+		cfg.WithIP(localIP)
+	}
+	wsHandler := func(message []byte) {
+		j, err := newJSON(message)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+
+		event := new(WsUserDataEvent)
+
+		err = json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+
+		switch UserDataEventType(j.Get("e").MustString()) {
+		case UserDataEventTypeOutboundAccountPosition:
+			err = json.Unmarshal(message, &event.AccountUpdate)
+			if err != nil {
+				errHandler(err)
+				return
+			}
+		case UserDataEventTypeBalanceUpdate:
+			err = json.Unmarshal(message, &event.BalanceUpdate)
+			if err != nil {
+				errHandler(err)
+				return
+			}
+		case UserDataEventTypeExecutionReport:
+			err = json.Unmarshal(message, &event.OrderUpdate)
+			if err != nil {
+				errHandler(err)
+				return
+			}
+		case UserDataEventTypeListStatus:
+			err = json.Unmarshal(message, &event.OCOUpdate)
+			if err != nil {
+				errHandler(err)
+				return
+			}
+		}
+
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
 // WsMarketStatHandler handle websocket that push single market statistics for 24hr
 type WsMarketStatHandler func(event *WsMarketStatEvent)
 
