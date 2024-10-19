@@ -395,7 +395,7 @@ func (c *ClientWs) dial() error {
 		}()
 		sendErr := c.sender()
 		if sendErr != nil {
-			if !strings.Contains(sendErr.Error(), "operation cancelled: receiver") {
+			if !strings.Contains(sendErr.Error(), "operation cancelled: sender") {
 				c.ErrChan <- &Error{
 					Error: &ErrorDetail{
 						Code: 111,
