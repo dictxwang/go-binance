@@ -246,8 +246,11 @@ type WsAllMarkPriceEvent []*WsMarkPriceEvent
 // WsAllMarkPriceHandler handle websocket that pushes price and funding rate for all symbol.
 type WsAllMarkPriceHandler func(event WsAllMarkPriceEvent)
 
-func wsAllMarkPriceServe(endpoint string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+func wsAllMarkPriceServe(endpoint string, localIP string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	cfg := newWsConfig(endpoint)
+	if localIP != "" {
+		cfg.WithIP(localIP)
+	}
 	wsHandler := func(message []byte) {
 		var event WsAllMarkPriceEvent
 		err := json.Unmarshal(message, &event)
@@ -263,7 +266,13 @@ func wsAllMarkPriceServe(endpoint string, handler WsAllMarkPriceHandler, errHand
 // WsAllMarkPriceServe serve websocket that pushes price and funding rate for all symbol.
 func WsAllMarkPriceServe(handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/!markPrice@arr", getWsEndpoint())
-	return wsAllMarkPriceServe(endpoint, handler, errHandler)
+	return wsAllMarkPriceServe(endpoint, "", handler, errHandler)
+}
+
+// WsAllMarkPriceServeWithIP serve websocket that pushes price and funding rate for all symbol.
+func WsAllMarkPriceServeWithIP(ip string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/!markPrice@arr", getWsEndpoint())
+	return wsAllMarkPriceServe(endpoint, ip, handler, errHandler)
 }
 
 // WsAllMarkPriceServeWithRate serve websocket that pushes price and funding rate for all symbol and rate.
@@ -278,7 +287,22 @@ func WsAllMarkPriceServeWithRate(rate time.Duration, handler WsAllMarkPriceHandl
 		return nil, nil, errors.New("Invalid rate")
 	}
 	endpoint := fmt.Sprintf("%s/!markPrice@arr%s", getWsEndpoint(), rateStr)
-	return wsAllMarkPriceServe(endpoint, handler, errHandler)
+	return wsAllMarkPriceServe(endpoint, "", handler, errHandler)
+}
+
+// WsAllMarkPriceServeWithRateWithIP serve websocket that pushes price and funding rate for all symbol and rate.
+func WsAllMarkPriceServeWithRateWithIP(ip string, rate time.Duration, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	var rateStr string
+	switch rate {
+	case 3 * time.Second:
+		rateStr = ""
+	case 1 * time.Second:
+		rateStr = "@1s"
+	default:
+		return nil, nil, errors.New("Invalid rate")
+	}
+	endpoint := fmt.Sprintf("%s/!markPrice@arr%s", getWsEndpoint(), rateStr)
+	return wsAllMarkPriceServe(endpoint, ip, handler, errHandler)
 }
 
 // WsKlineEvent define websocket kline event
