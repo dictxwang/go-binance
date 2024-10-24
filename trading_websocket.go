@@ -418,44 +418,36 @@ func (c *ClientWs) sender() error {
 	ticker := time.NewTicker(time.Millisecond * 300)
 	defer ticker.Stop()
 
+	var chanError error
 	for {
+		if chanError != nil {
+			break
+		}
 		select {
 		case data := <-c.sendChan:
-			if string(data) == "ping" {
-				deadline := time.Now().Add(10 * time.Second)
-				err := c.conn.WriteControl(websocket.PingMessage, []byte{}, deadline)
-				if err != nil {
-					return fmt.Errorf("failed to send ping to conn, error: %w", err)
-				}
-			} else {
-				err := c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-				if err != nil {
-					return fmt.Errorf("failed to set write deadline for ws connection, error: %w", err)
-				}
-
-				err = c.conn.WriteMessage(websocket.TextMessage, data)
-				if err != nil {
-					if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.ClosePolicyViolation) {
-						return fmt.Errorf("connection closed, error: %w", err)
+			go func() {
+				if string(data) == "ping" {
+					deadline := time.Now().Add(10 * time.Second)
+					err := c.conn.WriteControl(websocket.PingMessage, []byte{}, deadline)
+					if err != nil {
+						chanError = fmt.Errorf("failed to send ping to conn, error: %w", err)
+					}
+				} else {
+					err := c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+					if err != nil {
+						chanError = fmt.Errorf("failed to set write deadline for ws connection, error: %w", err)
 					}
 
-					return fmt.Errorf("Failed to send auth request: %v", err)
-				}
-				//
-				//w, err := c.conn.NextWriter(websocket.TextMessage)
-				//if err != nil {
-				//	return fmt.Errorf("failed to get next writer for ws connection, error: %w", err)
-				//}
-				//
-				//if _, err = w.Write(data); err != nil {
-				//	return fmt.Errorf("failed to write data via ws connection, error: %w", err)
-				//}
-				//
-				//if err := w.Close(); err != nil {
-				//	return fmt.Errorf("failed to close ws connection, error: %w", err)
-				//}
-			}
+					err = c.conn.WriteMessage(websocket.TextMessage, data)
+					if err != nil {
+						if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.ClosePolicyViolation) {
+							chanError = fmt.Errorf("connection closed, error: %w", err)
+						}
 
+						chanError = fmt.Errorf("Failed to send auth request: %v", err)
+					}
+				}
+			}()
 		case <-ticker.C:
 			lastTransmit := c.lastTransmit
 			if c.conn != nil && (lastTransmit == nil || (lastTransmit != nil && time.Since(*lastTransmit) > PingPeriod)) {
@@ -465,6 +457,7 @@ func (c *ClientWs) sender() error {
 			}
 		}
 	}
+	return chanError
 }
 func (c *ClientWs) receiver() error {
 	for {
