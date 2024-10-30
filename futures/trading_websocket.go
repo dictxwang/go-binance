@@ -118,9 +118,10 @@ type ClientWs struct {
 	Authorized    bool
 	LocalIP       string
 	lastTransmit  *time.Time
+	resolver      *net.Resolver
 }
 
-func NewTradingWsClient(ctx context.Context, apiKey, secretKey, ip string) *ClientWs {
+func NewTradingWsClient(ctx context.Context, apiKey, secretKey, localIP string) *ClientWs {
 	ctx, cancel := context.WithCancel(ctx)
 	c := &ClientWs{
 		url:       getTradingWsEndpoint(),
@@ -132,7 +133,7 @@ func NewTradingWsClient(ctx context.Context, apiKey, secretKey, ip string) *Clie
 		Cancel:    cancel,
 		sendChan:  make(chan []byte, 3),
 		DoneChan:  make(chan interface{}, 32),
-		LocalIP:   ip,
+		LocalIP:   localIP,
 	}
 
 	privateKey, err := parsePrivateKey(c.secretKey)
@@ -142,6 +143,10 @@ func NewTradingWsClient(ctx context.Context, apiKey, secretKey, ip string) *Clie
 	}
 	c.privateKey = privateKey
 	return c
+}
+
+func (c *ClientWs) SetResolver(resolver *net.Resolver) {
+	c.resolver = resolver
 }
 
 func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan *OrderResp) {
@@ -293,8 +298,17 @@ func (c *ClientWs) dial() error {
 				if err != nil {
 					return nil, err
 				}
-				d := net.Dialer{
-					LocalAddr: localAddr,
+				var d net.Dialer
+				if c.resolver == nil {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  net.DefaultResolver,
+					}
+				} else {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  c.resolver,
+					}
 				}
 				return d.Dial(network, addr)
 			},
@@ -524,7 +538,7 @@ func (c *ClientWs) process(data []byte, e *Basic) bool {
 type WsPlaceOrder struct {
 	NewClientOrderId string  `json:"newClientOrderId"`
 	Symbol           string  `json:"symbol"`
-	Price            string  `json:"price"`
+	Price            float64 `json:"price"`
 	Quantity         float64 `json:"quantity"`
 	Side             string  `json:"side"`
 	Type             string  `json:"type"`
