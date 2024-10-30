@@ -8,12 +8,12 @@ import (
 // ToggleFuturesBNBBurnService toggle BNB Burn on futures trade
 type ToggleFuturesBNBBurnService struct {
 	c       *Client
-	feeBurn *bool
+	feeBurn bool
 }
 
 // FeeBurn sets the futures bnb burn parameter.
 func (s *ToggleFuturesBNBBurnService) FeeBurn(v bool) *ToggleFuturesBNBBurnService {
-	s.feeBurn = &v
+	s.feeBurn = v
 	return s
 }
 
