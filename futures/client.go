@@ -72,6 +72,10 @@ type UserDataEventReasonType string
 // ForceOrderCloseType define reason type for force order
 type ForceOrderCloseType string
 
+type RateLimitType string
+
+type RateLimitInterval string
+
 // Endpoints
 const (
 	baseApiMainUrl     = "https://fapi.binance.com"
@@ -179,6 +183,14 @@ const (
 	timestampKey  = "timestamp"
 	signatureKey  = "signature"
 	recvWindowKey = "recvWindow"
+
+	RateLimitTypeRequestWeight RateLimitType = "REQUEST_WEIGHT"
+	RateLimitTypeOrders        RateLimitType = "ORDERS"
+	RateLimitTypeRawRequests   RateLimitType = "RAW_REQUESTS"
+
+	RateLimitIntervalSecond RateLimitInterval = "SECOND"
+	RateLimitIntervalMinute RateLimitInterval = "MINUTE"
+	RateLimitIntervalDay    RateLimitInterval = "DAY"
 )
 
 func currentTimestamp() int64 {
@@ -663,4 +675,8 @@ func (c *Client) NewLongShortRatioService() *LongShortRatioService {
 
 func (c *Client) NewFuturesBnbBurnService() *ToggleFuturesBNBBurnService {
 	return &ToggleFuturesBNBBurnService{c: c}
+}
+
+func (c *Client) NewRateLimitService() *RateLimitService {
+	return &RateLimitService{c: c}
 }
