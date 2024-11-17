@@ -46,9 +46,9 @@ type OrderStatusType string
 // BusinessUnit define business unit
 type BusinessUnit string
 
-//
-//// SymbolType define symbol type
-//type SymbolType string
+// // SymbolType define symbol type
+type SymbolType string
+
 //
 //// SymbolStatusType define symbol status type
 //type SymbolStatusType string
@@ -186,6 +186,9 @@ const (
 	timestampKey  = "timestamp"
 	signatureKey  = "signature"
 	recvWindowKey = "recvWindow"
+
+	SymbolTypeMargin  SymbolType = "MARGIN"
+	SymbolTypeFutures SymbolType = "FUTURES"
 )
 
 func currentTimestamp() int64 {
@@ -415,9 +418,14 @@ func (c *Client) NewCmCommissionRateService() *CmCommissionRateService {
 	return &CmCommissionRateService{c: c}
 }
 
-// NewCmPositionSideDualService init cm position side dual service
-func (c *Client) NewCmPositionSideDualService() *CmPositionSideDualService {
-	return &CmPositionSideDualService{c: c}
+// NewCmChangePositionModeService init cm position side dual service
+func (c *Client) NewCmChangePositionModeService() *CmChangePositionModeService {
+	return &CmChangePositionModeService{c: c}
+}
+
+// NewCmGetPositionModeService init cm position side dual service
+func (c *Client) NewCmGetPositionModeService() *CmGetPositionModeService {
+	return &CmGetPositionModeService{c: c}
 }
 
 // NewCmSetLeverageService init cm set leverage service
@@ -456,9 +464,14 @@ func (c *Client) NewUmCommissionRateService() *UmCommissionRateService {
 	return &UmCommissionRateService{c: c}
 }
 
-// NewUmPositionSideDualService init um position side dual service
-func (c *Client) NewUmPositionSideDualService() *UmPositionSideDualService {
-	return &UmPositionSideDualService{c: c}
+// NewUmGetPositionModeService init um position side dual service
+func (c *Client) NewUmGetPositionModeService() *UmGetPositionModeService {
+	return &UmGetPositionModeService{c: c}
+}
+
+// NewUmChangePositionModeService init um position side dual service
+func (c *Client) NewUmChangePositionModeService() *UmChangePositionModeService {
+	return &UmChangePositionModeService{c: c}
 }
 
 // NewUmSetLeverageService init um set leverage service
@@ -504,4 +517,13 @@ func (c *Client) NewKeepaliveUserStreamService() *KeepaliveUserStreamService {
 // NewCloseUserStreamService init closing user stream service
 func (c *Client) NewCloseUserStreamService() *CloseUserStreamService {
 	return &CloseUserStreamService{c: c}
+}
+
+// NewGetAllBalanceService init get balances service
+func (c *Client) NewGetAllBalanceService() *GetAllBalanceService {
+	return &GetAllBalanceService{c: c}
+}
+
+func (c *Client) NewGetMaxBorrowableService() *GetMaxBorrowableService {
+	return &GetMaxBorrowableService{c: c}
 }

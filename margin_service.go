@@ -1129,3 +1129,39 @@ func (s *IsolatedMarginTransferService) Do(ctx context.Context, opts ...RequestO
 	}
 	return res, nil
 }
+
+// ChangeMaxLeverageService toggle BNB Burn on spot trade and margin interest
+type ChangeMaxLeverageService struct {
+	c           *Client
+	maxLeverage int64
+}
+
+// MaxLeverage sets the max-leverage.
+func (s *ChangeMaxLeverageService) MaxLeverage(leverage int64) *ChangeMaxLeverageService {
+	s.maxLeverage = leverage
+	return s
+}
+
+// Do send request
+func (s *ChangeMaxLeverageService) Do(ctx context.Context, opts ...RequestOption) (*ChangeMaxLeverage, error) {
+	r := &request{
+		method:   http.MethodPost,
+		endpoint: "/sapi/v1/margin/max-leverage",
+		secType:  secTypeSigned,
+	}
+	r.setParam("maxLeverage", s.maxLeverage)
+
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	res := ChangeMaxLeverage{}
+	if err = json.Unmarshal(data, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+type ChangeMaxLeverage struct {
+	Success bool `json:"success"`
+}

@@ -779,6 +779,10 @@ func (c *Client) NewGetMarginAllPairsService() *GetMarginAllPairsService {
 	return &GetMarginAllPairsService{c: c}
 }
 
+func (c *Client) NewChangeMaxLeverageService() *ChangeMaxLeverageService {
+	return &ChangeMaxLeverageService{c: c}
+}
+
 // NewGetMarginPriceIndexService init get margin price index service
 func (c *Client) NewGetMarginPriceIndexService() *GetMarginPriceIndexService {
 	return &GetMarginPriceIndexService{c: c}
