@@ -18,6 +18,7 @@ type ErrHandler func(err error)
 type WsConfig struct {
 	Endpoint string
 	IP       string
+	Resolver *net.Resolver
 }
 
 func newWsConfig(endpoint string) *WsConfig {
@@ -28,6 +29,10 @@ func newWsConfig(endpoint string) *WsConfig {
 
 func (cfg *WsConfig) WithIP(ip string) {
 	cfg.IP = ip
+}
+
+func (cfg *WsConfig) WithResolver(resolver *net.Resolver) {
+	cfg.Resolver = resolver
 }
 
 var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
@@ -45,10 +50,20 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (don
 				if err != nil {
 					return nil, err
 				}
-				d := net.Dialer{
-					LocalAddr: localAddr,
+				var d net.Dialer
+				if cfg.Resolver == nil {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  net.DefaultResolver,
+					}
+				} else {
+					d = net.Dialer{
+						LocalAddr: localAddr,
+						Resolver:  cfg.Resolver,
+					}
 				}
 				return d.Dial(network, addr)
+
 			},
 			HandshakeTimeout:  45 * time.Second,
 			EnableCompression: false,

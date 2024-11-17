@@ -3,6 +3,7 @@ package binance
 import (
 	stdjson "encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 )
@@ -900,6 +901,28 @@ func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBook
 	endpoint = endpoint[:len(endpoint)-1]
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServeWithIPAndResolver is similar to WsCombinedBookTickerServe, but it is using assigned IP to connect ws service
+func WsCombinedBookTickerServeWithIPAndResolver(sourceIP string, resolver *net.Resolver, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(sourceIP)
+	cfg.WithResolver(resolver)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
 		err := json.Unmarshal(message, event)
