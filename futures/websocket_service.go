@@ -133,6 +133,42 @@ func WsCombinedAggTradeServe(symbols []string, handler WsAggTradeHandler, errHan
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
+// WsCombinedAggTradeServeWithIP is similar to WsAggTradeServe, but it handles multiple symbols
+func WsCombinedAggTradeServeWithIP(sourceIP string, symbols []string, handler WsAggTradeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@aggTrade", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(sourceIP)
+	wsHandler := func(message []byte) {
+		j, err := newJSON(message)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+
+		stream := j.Get("stream").MustString()
+		data := j.Get("data").MustMap()
+
+		symbol := strings.Split(stream, "@")[0]
+
+		jsonData, _ := json.Marshal(data)
+
+		event := new(WsAggTradeEvent)
+		err = json.Unmarshal(jsonData, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		event.Symbol = strings.ToUpper(symbol)
+
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
 // WsMarkPriceEvent define websocket markPriceUpdate event.
 type WsMarkPriceEvent struct {
 	Event                string `json:"e"`
@@ -1141,8 +1177,8 @@ type WsOrderTradeUpdate struct {
 	ExecutionType        OrderExecutionType `json:"x"`   // Execution type
 	Status               OrderStatusType    `json:"X"`   // Order status
 	ID                   int64              `json:"i"`   // Order ID
-	LastFilledQty        string             `json:"l"`   // Order Last Filled Quantity
-	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Quantity
+	LastFilledQty        string             `json:"l"`   // Order Last Filled Volume
+	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Volume
 	LastFilledPrice      string             `json:"L"`   // Last Filled Price
 	CommissionAsset      string             `json:"N"`   // Commission Asset, will not push if no commission
 	Commission           string             `json:"n"`   // Commission, will not push if no commission
