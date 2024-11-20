@@ -145,6 +145,30 @@ func NewTradingWsClient(ctx context.Context, apiKey, secretKey, localIP string) 
 	return c
 }
 
+func NewTradingWsClientIfIntranet(ctx context.Context, apiKey, secretKey, localIP string, useIntranet bool) *ClientWs {
+	ctx, cancel := context.WithCancel(ctx)
+	c := &ClientWs{
+		url:       getTradingWsEndpointIfIntranet(useIntranet),
+		apiKey:    apiKey,
+		secretKey: secretKey,
+		conn:      nil,
+		closed:    false,
+		ctx:       ctx,
+		Cancel:    cancel,
+		sendChan:  make(chan []byte, 3),
+		DoneChan:  make(chan interface{}, 32),
+		LocalIP:   localIP,
+	}
+
+	privateKey, err := parsePrivateKey(c.secretKey)
+	if err != nil {
+		fmt.Errorf("failed to parse private key")
+		os.Exit(-1)
+	}
+	c.privateKey = privateKey
+	return c
+}
+
 func (c *ClientWs) SetResolver(resolver *net.Resolver) {
 	c.resolver = resolver
 }

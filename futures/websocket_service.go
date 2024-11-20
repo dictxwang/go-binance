@@ -65,6 +65,14 @@ func getTradingWsEndpoint() string {
 	return baseTradingWsUrl
 }
 
+func getTradingWsEndpointIfIntranet(useIntranet bool) string {
+	if useIntranet {
+		return baseInternalTradingWsUrl
+	} else {
+		return baseTradingWsUrl
+	}
+}
+
 // WsAggTradeEvent define websocket aggTrde event.
 type WsAggTradeEvent struct {
 	Event            string `json:"e"`
