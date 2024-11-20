@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -114,6 +115,42 @@ func WsCombinedAggTradeServe(symbols []string, handler WsAggTradeHandler, errHan
 	}
 	endpoint = endpoint[:len(endpoint)-1]
 	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		j, err := newJSON(message)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+
+		stream := j.Get("stream").MustString()
+		data := j.Get("data").MustMap()
+
+		symbol := strings.Split(stream, "@")[0]
+
+		jsonData, _ := json.Marshal(data)
+
+		event := new(WsAggTradeEvent)
+		err = json.Unmarshal(jsonData, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		event.Symbol = strings.ToUpper(symbol)
+
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedAggTradeServeWithIP is similar to WsAggTradeServe, but it handles multiple symbols
+func WsCombinedAggTradeServeWithIP(sourceIP string, symbols []string, handler WsAggTradeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@aggTrade", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(sourceIP)
 	wsHandler := func(message []byte) {
 		j, err := newJSON(message)
 		if err != nil {
@@ -662,7 +699,13 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-
+	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
+	parsedURL, _ := url.Parse(endpoint)
+	domain := parsedURL.Host
+	ipList, _ := resolveDomainIpList(domain)
+	for _, ip := range ipList {
+		fmt.Printf("domain: %s, ip:%s", domain, ip)
+	}
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
@@ -683,7 +726,13 @@ func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBook
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-
+	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
+	parsedURL, _ := url.Parse(endpoint)
+	domain := parsedURL.Host
+	ipList, _ := resolveDomainIpList(domain)
+	for _, ip := range ipList {
+		fmt.Printf("domain: %s, ip:%s", domain, ip)
+	}
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
 	wsHandler := func(message []byte) {
@@ -1149,8 +1198,8 @@ type WsOrderTradeUpdate struct {
 	ExecutionType        OrderExecutionType `json:"x"`   // Execution type
 	Status               OrderStatusType    `json:"X"`   // Order status
 	ID                   int64              `json:"i"`   // Order ID
-	LastFilledQty        string             `json:"l"`   // Order Last Filled Quantity
-	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Quantity
+	LastFilledQty        string             `json:"l"`   // Order Last Filled Volume
+	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Volume
 	LastFilledPrice      string             `json:"L"`   // Last Filled Price
 	CommissionAsset      string             `json:"N"`   // Commission Asset, will not push if no commission
 	Commission           string             `json:"n"`   // Commission, will not push if no commission
@@ -1214,4 +1263,17 @@ func WsUserDataServeWithIP(ip, listenKey string, handler WsUserDataHandler, errH
 		handler(event)
 	}
 	return wsServe(cfg, wsHandler, errHandler)
+}
+
+func resolveDomainIpList(domain string) ([]string, error) {
+
+	ipList := make([]string, 0)
+	ips, err := net.LookupIP(domain)
+	if err != nil {
+		return ipList, err
+	}
+	for _, ip := range ips {
+		ipList = append(ipList, ip.String())
+	}
+	return ipList, nil
 }
