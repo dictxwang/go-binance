@@ -55,6 +55,11 @@ func getCombinedEndpoint() string {
 	return baseCombinedMainURL
 }
 
+// getCombinedIntranetEndpoint return the base intranet endpoint of the combined stream according the UseTestnet flag
+func getCombinedIntranetEndpoint() string {
+	return baseInternalCombinedMainURL
+}
+
 // getTradingWsEndpoint return the base endpoint of the WS according the UseTestnet flag
 func getTradingWsEndpoint() string {
 	if UseTestnet {
@@ -719,9 +724,64 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 	return wsServe(cfg, wsHandler, errHandler)
 }
 
+// WsCombinedBookTickerServeIfIntranet is similar to WsCombinedBookTickerServeWithIntranet, but it is using intranet
+func WsCombinedBookTickerServeIfIntranet(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedIntranetEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
+	parsedURL, _ := url.Parse(endpoint)
+	domain := parsedURL.Host
+	ipList, _ := resolveDomainIpList(domain)
+	for _, ip := range ipList {
+		fmt.Printf("domain: %s, ip:%s", domain, ip)
+	}
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
 // WsCombinedBookTickerServeWithIP is similar to WsCombinedBookTickerServe,  but it is using assigned IP to connect ws service
 func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
+	parsedURL, _ := url.Parse(endpoint)
+	domain := parsedURL.Host
+	ipList, _ := resolveDomainIpList(domain)
+	for _, ip := range ipList {
+		fmt.Printf("domain: %s, ip:%s", domain, ip)
+	}
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServeWithIPIfIntranet is similar to WsCombinedBookTickerServeWithIP,  but it is using intranet
+func WsCombinedBookTickerServeWithIPIfIntranet(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedIntranetEndpoint()
 	for _, s := range symbols {
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}

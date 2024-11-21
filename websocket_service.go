@@ -42,6 +42,10 @@ func getCombinedEndpoint() string {
 	return BaseCombinedMainURL
 }
 
+func getCombinedIntranetEndpoint() string {
+	return BaseCombinedMainURL
+}
+
 // getTradingWsEndpoint return the base endpoint of the WS according the UseTestnet flag
 func getTradingWsEndpoint() string {
 	if UseTestnet {
@@ -874,6 +878,26 @@ func WsBookTickerServe(symbol string, handler WsBookTickerHandler, errHandler Er
 
 // WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is for multiple symbols
 func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := getCombinedEndpoint()
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServe is similar to WsBookTickerServe, but it is for multiple symbols
+func WsCombinedBookTickerServeWithIntranet(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := getCombinedEndpoint()
 	for _, s := range symbols {
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
