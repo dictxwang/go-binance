@@ -22,7 +22,7 @@ func (s *GetAllBalanceService) Do(ctx context.Context, opts ...RequestOption) (r
 		return nil, err
 	}
 	res = make([]*Balance, 0)
-	err = json.Unmarshal(data, res)
+	err = json.Unmarshal(data, &res)
 	if err != nil {
 		return nil, err
 	}
