@@ -76,6 +76,6 @@ func (s *GetMaxBorrowableService) Do(ctx context.Context, opts ...RequestOption)
 }
 
 type MaxBorrowable struct {
-	Amount      float64 `json:"amount"`
-	BorrowLimit float64 `json:"borrowLimit"`
+	Amount      string `json:"amount"`
+	BorrowLimit string `json:"borrowLimit"`
 }
