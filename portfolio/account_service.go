@@ -62,6 +62,7 @@ func (s *GetMaxBorrowableService) Do(ctx context.Context, opts ...RequestOption)
 		endpoint: "/papi/v1/margin/maxBorrowable",
 		secType:  secTypeSigned,
 	}
+	r.setParam("asset", s.asset)
 	data, _, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
 		return nil, err
