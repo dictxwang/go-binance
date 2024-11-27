@@ -49,6 +49,8 @@ type BusinessUnit string
 // // SymbolType define symbol type
 type SymbolType string
 
+type SideEffectType string
+
 //
 //// SymbolStatusType define symbol status type
 //type SymbolStatusType string
@@ -189,6 +191,10 @@ const (
 
 	SymbolTypeMargin  SymbolType = "MARGIN"
 	SymbolTypeFutures SymbolType = "FUTURES"
+
+	SideEffectTypeNoSideEffect SideEffectType = "NO_SIDE_EFFECT"
+	SideEffectTypeMarginBuy    SideEffectType = "MARGIN_BUY"
+	SideEffectTypeAutoRepay    SideEffectType = "AUTO_REPAY"
 )
 
 func currentTimestamp() int64 {
@@ -526,4 +532,20 @@ func (c *Client) NewGetAllBalanceService() *GetAllBalanceService {
 
 func (c *Client) NewGetMaxBorrowableService() *GetMaxBorrowableService {
 	return &GetMaxBorrowableService{c: c}
+}
+
+func (c *Client) NewMarginLoanService() *MarginLoanService {
+	return &MarginLoanService{c: c}
+}
+
+func (c *Client) NewMarginRepayService() *MarginRepayService {
+	return &MarginRepayService{c: c}
+}
+
+func (c *Client) NewMarginCreateOrderService() *MarginCreateOrderService {
+	return &MarginCreateOrderService{c: c}
+}
+
+func (c *Client) NewMarginCancelOrderService() *MarginCancelOrderService {
+	return &MarginCancelOrderService{c: c}
 }
