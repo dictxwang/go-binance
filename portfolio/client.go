@@ -549,3 +549,7 @@ func (c *Client) NewMarginCreateOrderService() *MarginCreateOrderService {
 func (c *Client) NewMarginCancelOrderService() *MarginCancelOrderService {
 	return &MarginCancelOrderService{c: c}
 }
+
+func (c *Client) NewGetAccountService() *GetAccountService {
+	return &GetAccountService{c: c}
+}

@@ -79,3 +79,39 @@ type MaxBorrowable struct {
 	Amount      string `json:"amount"`
 	BorrowLimit string `json:"borrowLimit"`
 }
+
+type GetAccountService struct {
+	c *Client
+}
+
+// Do send request
+func (s *GetAccountService) Do(ctx context.Context, opts ...RequestOption) (res *AccountInfo, err error) {
+	r := &request{
+		method:   http.MethodGet,
+		endpoint: "/papi/v1/account",
+		secType:  secTypeSigned,
+	}
+	data, _, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	res = new(AccountInfo)
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+type AccountInfo struct {
+	UniMMR                   string `json:"uniMMR"`
+	AccountEquity            string `json:"accountEquity"`
+	ActualEquity             string `json:"actualEquity"`
+	AccountInitialMargin     string `json:"accountInitialMargin"`
+	AccountMaintMargin       string `json:"accountMaintMargin"`
+	AccountStatus            string `json:"accountStatus"`
+	VirtualMaxWithdrawAmount string `json:"virtualMaxWithdrawAmount"`
+	TotalAvailableBalance    string `json:"totalAvailableBalance"`
+	TotalMarginOpenLoss      string `json:"totalMarginOpenLoss"`
+	UpdateTime               int64  `json:"updateTime"`
+}
