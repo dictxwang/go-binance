@@ -138,6 +138,7 @@ func WsUserDataServeWithIP(ip string, listenKey string, handler WsUserDataHandle
 // WsPackedUserDataEvent define user data event
 type WsPackedUserDataEvent struct {
 	EventType    string `json:"e"`
+	EventTs      int64  `json:"E"`
 	EventContent string `json:"EventContent,omitempty"`
 }
 
