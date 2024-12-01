@@ -87,6 +87,8 @@ type MarginCreateOrderResponse struct {
 	Side                    SideType                `json:"side"`                            //
 	MarginBuyBorrowAsset    string                  `json:"marginBuyBorrowAsset,omitempty"`  //
 	MarginBuyBorrowAmount   string                  `json:"marginBuyBorrowAmount,omitempty"` //
+	RateLimitOrder10s       string                  `json:"rateLimitOrder10s,omitempty"`     //
+	RateLimitOrder1m        string                  `json:"rateLimitOrder1m,omitempty"`      //
 }
 
 func (s *MarginCreateOrderService) createOrder(ctx context.Context, endpoint string, opts ...RequestOption) (data []byte, header *http.Header, err error) {
@@ -131,12 +133,15 @@ func (s *MarginCreateOrderService) createOrder(ctx context.Context, endpoint str
 
 // Do send request
 func (s *MarginCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *MarginCreateOrderResponse, err error) {
-	data, _, err := s.createOrder(ctx, "/papi/v1/margin/order", opts...)
+	data, header, err := s.createOrder(ctx, "/papi/v1/margin/order", opts...)
 	if err != nil {
 		return nil, err
 	}
 	res = new(MarginCreateOrderResponse)
 	err = json.Unmarshal(data, res)
+
+	res.RateLimitOrder10s = header.Get("X-Mbx-Order-Count-10s")
+	res.RateLimitOrder1m = header.Get("X-Mbx-Order-Count-1m")
 
 	if err != nil {
 		return nil, err

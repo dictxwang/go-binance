@@ -91,24 +91,26 @@ func (s *UmCreateOrderService) SelfTradePrevention(selfTradePreventionMode SelfT
 
 // CreateOrderResponse define create order response
 type UmCreateOrderResponse struct {
-	ClientOrderID           string                  `json:"clientOrderId"`           //
-	CumQty                  string                  `json:"cumQty"`                  //
-	CumQuote                string                  `json:"cumQuote"`                //
-	ExecutedQuantity        string                  `json:"executedQty"`             //
-	OrderID                 int64                   `json:"orderId"`                 //
-	AvgPrice                string                  `json:"avgPrice"`                //
-	OrigQuantity            string                  `json:"origQty"`                 //
-	Price                   string                  `json:"price"`                   //
-	ReduceOnly              bool                    `json:"reduceOnly"`              //
-	Side                    SideType                `json:"side"`                    //
-	PositionSide            PositionSideType        `json:"positionSide"`            //
-	Status                  OrderStatusType         `json:"status"`                  //
-	Symbol                  string                  `json:"symbol"`                  //
-	TimeInForce             TimeInForceType         `json:"timeInForce"`             //
-	Type                    OrderType               `json:"type"`                    //
-	SelfTradePreventionMode SelfTradePreventionMode `json:"selfTradePreventionMode"` // self trading preventation mode
-	GoodTillDate            int64                   `json:"goodTillDate"`            // order pre-set auto cancel time for TIF GTD order
-	UpdateTime              int64                   `json:"updateTime"`              // update time
+	ClientOrderID           string                  `json:"clientOrderId"`               //
+	CumQty                  string                  `json:"cumQty"`                      //
+	CumQuote                string                  `json:"cumQuote"`                    //
+	ExecutedQuantity        string                  `json:"executedQty"`                 //
+	OrderID                 int64                   `json:"orderId"`                     //
+	AvgPrice                string                  `json:"avgPrice"`                    //
+	OrigQuantity            string                  `json:"origQty"`                     //
+	Price                   string                  `json:"price"`                       //
+	ReduceOnly              bool                    `json:"reduceOnly"`                  //
+	Side                    SideType                `json:"side"`                        //
+	PositionSide            PositionSideType        `json:"positionSide"`                //
+	Status                  OrderStatusType         `json:"status"`                      //
+	Symbol                  string                  `json:"symbol"`                      //
+	TimeInForce             TimeInForceType         `json:"timeInForce"`                 //
+	Type                    OrderType               `json:"type"`                        //
+	SelfTradePreventionMode SelfTradePreventionMode `json:"selfTradePreventionMode"`     // self trading preventation mode
+	GoodTillDate            int64                   `json:"goodTillDate"`                // order pre-set auto cancel time for TIF GTD order
+	UpdateTime              int64                   `json:"updateTime"`                  // update time
+	RateLimitOrder10s       string                  `json:"rateLimitOrder10s,omitempty"` //
+	RateLimitOrder1m        string                  `json:"rateLimitOrder1m,omitempty"`  //
 }
 
 func (s *UmCreateOrderService) createOrder(ctx context.Context, endpoint string, opts ...RequestOption) (data []byte, header *http.Header, err error) {
@@ -158,12 +160,15 @@ func (s *UmCreateOrderService) createOrder(ctx context.Context, endpoint string,
 
 // Do send request
 func (s *UmCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *UmCreateOrderResponse, err error) {
-	data, _, err := s.createOrder(ctx, "/papi/v1/um/order", opts...)
+	data, header, err := s.createOrder(ctx, "/papi/v1/um/order", opts...)
 	if err != nil {
 		return nil, err
 	}
 	res = new(UmCreateOrderResponse)
 	err = json.Unmarshal(data, res)
+
+	res.RateLimitOrder10s = header.Get("X-Mbx-Order-Count-10s")
+	res.RateLimitOrder1m = header.Get("X-Mbx-Order-Count-1m")
 
 	if err != nil {
 		return nil, err

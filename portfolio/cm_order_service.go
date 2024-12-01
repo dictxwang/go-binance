@@ -83,23 +83,25 @@ func (s *CmCreateOrderService) NewOrderResponseType(newOrderResponseType NewOrde
 
 // CmCreateOrderResponse define create order response
 type CmCreateOrderResponse struct {
-	ClientOrderID    string           `json:"clientOrderId"` //
-	CumQty           string           `json:"cumQty"`        //
-	CumBase          string           `json:"cumBase"`       //
-	ExecutedQuantity string           `json:"executedQty"`   //
-	OrderID          int64            `json:"orderId"`       //
-	AvgPrice         string           `json:"avgPrice"`      //
-	OrigQuantity     string           `json:"origQty"`       //
-	Price            string           `json:"price"`         //
-	ReduceOnly       bool             `json:"reduceOnly"`    //
-	Side             SideType         `json:"side"`          //
-	PositionSide     PositionSideType `json:"positionSide"`  //
-	Status           OrderStatusType  `json:"status"`        //
-	Symbol           string           `json:"symbol"`        //
-	Pair             string           `json:"pair"`
-	TimeInForce      TimeInForceType  `json:"timeInForce"` //
-	Type             OrderType        `json:"type"`        //
-	UpdateTime       int64            `json:"updateTime"`  // update time
+	ClientOrderID     string           `json:"clientOrderId"` //
+	CumQty            string           `json:"cumQty"`        //
+	CumBase           string           `json:"cumBase"`       //
+	ExecutedQuantity  string           `json:"executedQty"`   //
+	OrderID           int64            `json:"orderId"`       //
+	AvgPrice          string           `json:"avgPrice"`      //
+	OrigQuantity      string           `json:"origQty"`       //
+	Price             string           `json:"price"`         //
+	ReduceOnly        bool             `json:"reduceOnly"`    //
+	Side              SideType         `json:"side"`          //
+	PositionSide      PositionSideType `json:"positionSide"`  //
+	Status            OrderStatusType  `json:"status"`        //
+	Symbol            string           `json:"symbol"`        //
+	Pair              string           `json:"pair"`
+	TimeInForce       TimeInForceType  `json:"timeInForce"`                 //
+	Type              OrderType        `json:"type"`                        //
+	UpdateTime        int64            `json:"updateTime"`                  // update time
+	RateLimitOrder10s string           `json:"rateLimitOrder10s,omitempty"` //
+	RateLimitOrder1m  string           `json:"rateLimitOrder1m,omitempty"`  //
 }
 
 func (s *CmCreateOrderService) createOrder(ctx context.Context, endpoint string, opts ...RequestOption) (data []byte, header *http.Header, err error) {
@@ -143,12 +145,15 @@ func (s *CmCreateOrderService) createOrder(ctx context.Context, endpoint string,
 
 // Do send request
 func (s *CmCreateOrderService) Do(ctx context.Context, opts ...RequestOption) (res *CmCreateOrderResponse, err error) {
-	data, _, err := s.createOrder(ctx, "/papi/v1/cm/order", opts...)
+	data, header, err := s.createOrder(ctx, "/papi/v1/cm/order", opts...)
 	if err != nil {
 		return nil, err
 	}
 	res = new(CmCreateOrderResponse)
 	err = json.Unmarshal(data, res)
+
+	res.RateLimitOrder10s = header.Get("X-Mbx-Order-Count-10s")
+	res.RateLimitOrder1m = header.Get("X-Mbx-Order-Count-1m")
 
 	if err != nil {
 		return nil, err
