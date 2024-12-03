@@ -220,3 +220,45 @@ type APIKeyPermission struct {
 	EnableSpotAndMarginTrading     bool   `json:"enableSpotAndMarginTrading"`
 	TradingAuthorityExpirationTime uint64 `json:"tradingAuthorityExpirationTime"`
 }
+
+type BNBTransferService struct {
+	c            *Client
+	amount       float64
+	transferSide BNBTransferSide
+}
+
+func (c *BNBTransferService) Amount(amount float64) *BNBTransferService {
+	c.amount = amount
+	return c
+}
+
+func (c *BNBTransferService) TransferSide(side BNBTransferSide) *BNBTransferService {
+	c.transferSide = side
+	return c
+}
+
+type BNBTransfer struct {
+	TransferId int64 `json:"tranId"`
+}
+
+// Do send request
+func (s *BNBTransferService) Do(ctx context.Context, opts ...RequestOption) (res *BNBTransfer, err error) {
+	r := &request{
+		method:   http.MethodPost,
+		endpoint: "/sapi/v1/portfolio/bnb-transfer",
+		secType:  secTypeSigned,
+	}
+	r.setParam("amount", s.amount)
+	r.setParam("transferSide", s.transferSide)
+
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	res = new(BNBTransfer)
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}

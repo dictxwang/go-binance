@@ -80,6 +80,8 @@ type UserDataEventReasonType string
 //// ForceOrderCloseType define reason type for force order
 //type ForceOrderCloseType string
 
+type BNBTransferSide string
+
 // Endpoints
 const (
 	baseApiMainUrl    = "https://papi.binance.com"
@@ -195,6 +197,9 @@ const (
 	SideEffectTypeNoSideEffect SideEffectType = "NO_SIDE_EFFECT"
 	SideEffectTypeMarginBuy    SideEffectType = "MARGIN_BUY"
 	SideEffectTypeAutoRepay    SideEffectType = "AUTO_REPAY"
+
+	BNBTransferSideToUM   BNBTransferSide = "TO_UM"
+	BNBTransferSideFromUM BNBTransferSide = "FROM_UM"
 )
 
 func currentTimestamp() int64 {
@@ -552,4 +557,8 @@ func (c *Client) NewMarginCancelOrderService() *MarginCancelOrderService {
 
 func (c *Client) NewGetAccountService() *GetAccountService {
 	return &GetAccountService{c: c}
+}
+
+func (c *Client) NewBNBTransferService() *BNBTransferService {
+	return &BNBTransferService{c: c}
 }

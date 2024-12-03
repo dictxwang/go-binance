@@ -104,6 +104,8 @@ type RateLimitInterval string
 // AccountType define the account types
 type AccountType string
 
+type BNBTransferSide string
+
 // Endpoints
 var (
 	BaseAPIMainURL    = "http://api.binance.com"
@@ -241,6 +243,9 @@ const (
 	AccountTypeIsolatedMargin AccountType = "ISOLATED_MARGIN"
 	AccountTypeUSDTFuture     AccountType = "USDT_FUTURE"
 	AccountTypeCoinFuture     AccountType = "COIN_FUTURE"
+
+	BNBTransferSideToUM   BNBTransferSide = "TO_UM"
+	BNBTransferSideFromUM BNBTransferSide = "FROM_UM"
 )
 
 func currentTimestamp() int64 {
