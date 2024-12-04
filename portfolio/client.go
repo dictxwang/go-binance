@@ -562,3 +562,15 @@ func (c *Client) NewGetAccountService() *GetAccountService {
 func (c *Client) NewBNBTransferService() *BNBTransferService {
 	return &BNBTransferService{c: c}
 }
+
+func (c *Client) NewGetRepayFuturesSwitchService() *GetRepayFuturesSwitchService {
+	return &GetRepayFuturesSwitchService{c: c}
+}
+
+func (c *Client) NewChangeRepayFuturesSwitchService() *ChangeRepayFuturesSwitchService {
+	return &ChangeRepayFuturesSwitchService{c: c}
+}
+
+func (c *Client) NewAssetCollectionService() *AssetCollectionService {
+	return &AssetCollectionService{c: c}
+}
