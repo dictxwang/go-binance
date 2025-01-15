@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"net/url"
 	"strings"
 	"time"
 )
@@ -704,13 +703,6 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
-	parsedURL, _ := url.Parse(endpoint)
-	domain := parsedURL.Host
-	ipList, _ := resolveDomainIpList(domain)
-	for _, ip := range ipList {
-		fmt.Printf("domain: %s, ip:%s", domain, ip)
-	}
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
@@ -731,13 +723,6 @@ func WsCombinedBookTickerServeIfIntranet(symbols []string, handler WsBookTickerH
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
-	parsedURL, _ := url.Parse(endpoint)
-	domain := parsedURL.Host
-	ipList, _ := resolveDomainIpList(domain)
-	for _, ip := range ipList {
-		fmt.Printf("domain: %s, ip:%s", domain, ip)
-	}
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
@@ -758,13 +743,6 @@ func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBook
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
-	parsedURL, _ := url.Parse(endpoint)
-	domain := parsedURL.Host
-	ipList, _ := resolveDomainIpList(domain)
-	for _, ip := range ipList {
-		fmt.Printf("domain: %s, ip:%s", domain, ip)
-	}
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
 	wsHandler := func(message []byte) {
@@ -786,13 +764,6 @@ func WsCombinedBookTickerServeWithIPIfIntranet(ip string, symbols []string, hand
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-	fmt.Printf("isPrivate %t, WsCombinedBookTickerServe: %s", UseIntranet, endpoint)
-	parsedURL, _ := url.Parse(endpoint)
-	domain := parsedURL.Host
-	ipList, _ := resolveDomainIpList(domain)
-	for _, ip := range ipList {
-		fmt.Printf("domain: %s, ip:%s", domain, ip)
-	}
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
 	wsHandler := func(message []byte) {
