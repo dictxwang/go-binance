@@ -1082,6 +1082,26 @@ func (c *Client) NewCrossMarginDataService() *CrossMarginDataService {
 	return &CrossMarginDataService{c: c}
 }
 
-func (c *Client) NewInterestHourlyService() *InterestHourlyService {
-	return &InterestHourlyService{c: c}
+func (c *Client) NewListCollateralAssetsService() *ListCollateralAssetsService {
+	return &ListCollateralAssetsService{c: c}
+}
+
+func (c *Client) NewListLoanAssetsService() *ListLoanAssetsService {
+	return &ListLoanAssetsService{c: c}
+}
+
+func (c *Client) NewListOngoingOrdersService() *ListOngoingOrdersService {
+	return &ListOngoingOrdersService{c: c}
+}
+
+func (c *Client) NewFlexibleLoanBorrowService() *FlexibleLoanBorrowService {
+	return &FlexibleLoanBorrowService{c: c}
+}
+
+func (c *Client) NewFlexibleLoanRepayService() *FlexibleLoanRepayService {
+	return &FlexibleLoanRepayService{c: c}
+}
+
+func (c *Client) NewFlexibleLoanCollateralRepayService() *FlexibleLoanCollateralRepayService {
+	return &FlexibleLoanCollateralRepayService{c: c}
 }
