@@ -1165,3 +1165,75 @@ func (s *ChangeMaxLeverageService) Do(ctx context.Context, opts ...RequestOption
 type ChangeMaxLeverage struct {
 	Success bool `json:"success"`
 }
+
+// MarginBorrowRepayService margin borrow and repay
+type MarginBorrowRepayService struct {
+	c          *Client
+	asset      string
+	isIsolated bool
+	symbol     *string
+	amount     string
+	opType     MarginOpType
+}
+
+// Asset set asset being transferred, e.g., BTC
+func (s *MarginBorrowRepayService) Asset(asset string) *MarginBorrowRepayService {
+	s.asset = asset
+	return s
+}
+
+// Amount the amount to be transferred
+func (s *MarginBorrowRepayService) Amount(amount string) *MarginBorrowRepayService {
+	s.amount = amount
+	return s
+}
+
+// IsIsolated is for isolated margin or not, "TRUE", "FALSE"，default "FALSE"
+func (s *MarginBorrowRepayService) IsIsolated(isIsolated bool) *MarginBorrowRepayService {
+	s.isIsolated = isIsolated
+	return s
+}
+
+// Symbol set isolated symbol
+func (s *MarginBorrowRepayService) Symbol(symbol string) *MarginBorrowRepayService {
+	s.symbol = &symbol
+	return s
+}
+
+// OpType operation type BORROW or REPAY
+func (s *MarginBorrowRepayService) OpType(opType MarginOpType) *MarginBorrowRepayService {
+	s.opType = opType
+	return s
+}
+
+// Do send request
+func (s *MarginBorrowRepayService) Do(ctx context.Context, opts ...RequestOption) (res *TransactionResponse, err error) {
+	r := &request{
+		method:   http.MethodPost,
+		endpoint: "/sapi/v1/margin/borrow-repay",
+		secType:  secTypeSigned,
+	}
+	m := params{
+		"asset":  s.asset,
+		"amount": s.amount,
+		"type":   s.opType,
+	}
+	r.setFormParams(m)
+	if s.isIsolated {
+		r.setParam("isIsolated", "TRUE")
+	}
+	if s.symbol != nil {
+		r.setParam("symbol", *s.symbol)
+	}
+
+	res = new(TransactionResponse)
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, res)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}

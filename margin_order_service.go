@@ -751,3 +751,50 @@ type CancelMarginOCOResponse struct {
 	Orders            []*MarginOCOOrder       `json:"orders"`
 	OrderReports      []*MarginOCOOrderReport `json:"orderReports"`
 }
+
+// CancelMarginAllOpenOrdersService cancel all margin orders of the specified symbol
+type CancelMarginAllOpenOrdersService struct {
+	c          *Client
+	symbol     string
+	isIsolated *bool
+}
+
+// Symbol set symbol
+func (s *CancelMarginAllOpenOrdersService) Symbol(symbol string) *CancelMarginAllOpenOrdersService {
+	s.symbol = symbol
+	return s
+}
+
+// IsIsolated set isIsolated
+func (s *CancelMarginAllOpenOrdersService) IsIsolated(isIsolated bool) *CancelMarginAllOpenOrdersService {
+	s.isIsolated = &isIsolated
+	return s
+}
+
+// Do send request
+func (s *CancelMarginAllOpenOrdersService) Do(ctx context.Context, opts ...RequestOption) (res []*CancelMarginAllOpenOrdersResponse, err error) {
+	r := &request{
+		method:   http.MethodDelete,
+		endpoint: "/sapi/v1/margin/openOrders",
+		secType:  secTypeSigned,
+	}
+	r.setFormParam("symbol", s.symbol)
+
+	if s.isIsolated != nil {
+		r.setFormParam("isIsolated", *s.isIsolated)
+	}
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var response CancelMarginAllOpenOrdersResponse
+	err = json.Unmarshal(data, &response)
+	if err != nil {
+		return nil, err
+	}
+	return res, nil
+}
+
+// CancelMarginAllOpenOrdersResponse define cancelled all open orders response.
+type CancelMarginAllOpenOrdersResponse []*CancelMarginOrderResponse

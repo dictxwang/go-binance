@@ -106,6 +106,9 @@ type AccountType string
 
 type BNBTransferSide string
 
+// MarginOpType define the operation type of margin: 'BORROW' or 'REPAY'
+type MarginOpType string
+
 // Endpoints
 var (
 	BaseAPIMainURL    = "http://api.binance.com"
@@ -246,6 +249,9 @@ const (
 
 	BNBTransferSideToUM   BNBTransferSide = "TO_UM"
 	BNBTransferSideFromUM BNBTransferSide = "FROM_UM"
+
+	MarginOpTypeBorrow MarginOpType = "BORROW"
+	MarginOpTypeRepay  MarginOpType = "REPAY"
 )
 
 func currentTimestamp() int64 {
@@ -720,9 +726,19 @@ func (c *Client) NewMarginRepayService() *MarginRepayService {
 	return &MarginRepayService{c: c}
 }
 
+// NewMarginBorrowRepayService init margin account borrow & repay service
+func (c *Client) NewMarginBorrowRepayService() *MarginBorrowRepayService {
+	return &MarginBorrowRepayService{c: c}
+}
+
 // NewCreateMarginOrderService init creating margin order service
 func (c *Client) NewCreateMarginOrderService() *CreateMarginOrderService {
 	return &CreateMarginOrderService{c: c}
+}
+
+// NewCancelMarginAllOpenOrdersService init cancel order service
+func (c *Client) NewCancelMarginAllOpenOrdersService() *CancelMarginAllOpenOrdersService {
+	return &CancelMarginAllOpenOrdersService{c: c}
 }
 
 // NewCancelMarginOrderService init cancel order service
