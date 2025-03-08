@@ -796,5 +796,24 @@ func (s *CancelMarginAllOpenOrdersService) Do(ctx context.Context, opts ...Reque
 	return res, nil
 }
 
+type CancelMarginAllOpenOrdersResponseItem struct {
+	Symbol                  string          `json:"symbol"`
+	IsIsolated              bool            `json:"isIsolated"`
+	OrigClientOrderId       string          `json:"origClientOrderId"`
+	OrderId                 int64           `json:"orderId"`
+	OrderListId             int64           `json:"orderListId"`
+	ClientOrderId           string          `json:"clientOrderId"`
+	Price                   string          `json:"price"`
+	OrigQty                 string          `json:"origQty"`
+	ExecutedQty             string          `json:"executedQty"`
+	CummulativeQuoteQty     string          `json:"cummulativeQuoteQty"`
+	Status                  OrderStatusType `json:"status"`
+	TimeInForce             TimeInForceType `json:"timeInForce"`
+	Type                    OrderType       `json:"type"`
+	Side                    SideType        `json:"side"`
+	SelfTradePreventionMode string          `json:"selfTradePreventionMode"`
+	TransactTime            int64           `json:"transactTime"`
+}
+
 // CancelMarginAllOpenOrdersResponse define cancelled all open orders response.
-type CancelMarginAllOpenOrdersResponse []*CancelMarginOrderResponse
+type CancelMarginAllOpenOrdersResponse []*CancelMarginAllOpenOrdersResponseItem
