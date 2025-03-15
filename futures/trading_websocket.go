@@ -568,6 +568,7 @@ type WsPlaceOrder struct {
 	Type             string  `json:"type"`
 	TimeInForce      string  `json:"timeInForce"`
 	PositionSide     string  `json:"positionSide"`
+	ReduceOnly       bool    `json:"reduceOnly"`
 	Timestamp        int64   `json:"timestamp"`
 }
 
