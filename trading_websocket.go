@@ -354,7 +354,6 @@ func (c *ClientWs) dial() error {
 		}
 	}
 	conn, res, err := dialer.Dial(c.url, nil)
-	conn.SetReadLimit(655350)
 	if err != nil {
 		var statusCode int
 		if res != nil {
@@ -362,6 +361,9 @@ func (c *ClientWs) dial() error {
 		}
 
 		return fmt.Errorf("error %d: %w", statusCode, err)
+	}
+	if conn != nil {
+		conn.SetReadLimit(655350)
 	}
 	defer res.Body.Close()
 
