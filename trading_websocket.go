@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
@@ -690,8 +691,14 @@ func (c *ClientWs) CancelAllOpenOrders(order *WsCancelAll) error {
 
 func s2m(i interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
+
 	j, _ := json.Marshal(i)
-	_ = json.Unmarshal(j, &m)
+	d := json.NewDecoder(bytes.NewReader(j))
+	d.UseNumber()
+	_ = d.Decode(&m)
+
+	//j, _ := json.Marshal(i)
+	//_ = json.Unmarshal(j, &m)
 
 	return m
 }
