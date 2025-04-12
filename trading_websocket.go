@@ -1,7 +1,6 @@
 package binance
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
@@ -613,7 +612,7 @@ func (c *ClientWs) processArray(data []byte, e *BasicArray) bool {
 type WsPlaceOrder struct {
 	NewClientOrderId string  `json:"newClientOrderId"`
 	Symbol           string  `json:"symbol"`
-	Price            float64 `json:"price,omitempty"`
+	Price            string  `json:"price,omitempty"`
 	Quantity         float64 `json:"quantity"`
 	Side             string  `json:"side"`
 	Type             string  `json:"type"`
@@ -693,12 +692,7 @@ func s2m(i interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 
 	j, _ := json.Marshal(i)
-	d := json.NewDecoder(bytes.NewReader(j))
-	d.UseNumber()
-	_ = d.Decode(&m)
-
-	//j, _ := json.Marshal(i)
-	//_ = json.Unmarshal(j, &m)
+	_ = json.Unmarshal(j, &m)
 
 	return m
 }
