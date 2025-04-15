@@ -537,8 +537,8 @@ func (c *ClientWs) process(data []byte, e *Basic) bool {
 	}
 
 	if e.Result != nil {
-		_, ok := e.GetResult("authorizedSince")
-		if ok {
+		_, authOk := e.GetResult("authorizedSince")
+		if authOk {
 			// logon request
 			if time.Since(*c.AuthRequested).Seconds() > 30 {
 				c.AuthRequested = nil
@@ -559,21 +559,18 @@ func (c *ClientWs) process(data []byte, e *Basic) bool {
 			return true
 		}
 
-		orderStatus, ok := e.GetResult("status")
-		if !ok {
+		_, statusOk := e.GetResult("status")
+		if !statusOk {
 			return false
 		} else {
-			if orderStatus == "NEW" || orderStatus == "CANCELED" {
-				e := OrderResp{}
-				_ = json.Unmarshal(data, &e)
-				go func() {
-					if c.OrderRespChan != nil {
-						c.OrderRespChan <- &e
-					}
-				}()
-			} else {
-				return false
-			}
+			e := OrderResp{}
+			_ = json.Unmarshal(data, &e)
+			go func() {
+				if c.OrderRespChan != nil {
+					c.OrderRespChan <- &e
+				}
+			}()
+			return true
 		}
 
 	}
