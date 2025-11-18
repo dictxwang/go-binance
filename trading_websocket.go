@@ -4,8 +4,6 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/base64"
-	"sync"
-
 	//"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -134,7 +132,6 @@ type ClientWs struct {
 	ServiceIP          string
 	lastTransmit       *time.Time
 	resolver           *net.Resolver
-	writeMutex         sync.Mutex
 }
 
 func NewTradingWsClient(apiKey, secretKey, localIP string, serviceIP string) (*ClientWs, error) {
@@ -171,9 +168,6 @@ func (c *ClientWs) SetChannels(errCh chan *Error, lCh chan *LoginResp, osCh chan
 }
 
 func (c *ClientWs) Send(method string, args map[string]interface{}, extras ...map[string]string) error {
-	c.writeMutex.Lock()
-	defer c.writeMutex.Unlock()
-
 	if method != "session.logon" {
 		err := c.Connect()
 		if err == nil {
@@ -429,46 +423,51 @@ func (c *ClientWs) sender() error {
 	for {
 		select {
 		case data := <-c.sendChan:
-			c.writeMutex.Lock()
 			if string(data) == "ping" {
 				deadline := time.Now().Add(10 * time.Second)
 				err := c.conn.WriteControl(websocket.PingMessage, []byte{}, deadline)
-				c.writeMutex.Unlock()
 				if err != nil {
 					return fmt.Errorf("failed to send ping to conn, error: %w", err)
 				}
 			} else {
 				err := c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 				if err != nil {
-					c.writeMutex.Unlock()
 					return fmt.Errorf("failed to set write deadline for ws connection, error: %w", err)
 				}
 
 				err = c.conn.WriteMessage(websocket.TextMessage, data)
-				c.writeMutex.Unlock()
 				if err != nil {
 					if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.ClosePolicyViolation) {
 						return fmt.Errorf("connection closed, error: %w", err)
 					}
+
 					return fmt.Errorf("Failed to send auth request: %v", err)
 				}
+				//
+				//w, err := c.conn.NextWriter(websocket.TextMessage)
+				//if err != nil {
+				//	return fmt.Errorf("failed to get next writer for ws connection, error: %w", err)
+				//}
+				//
+				//if _, err = w.Write(data); err != nil {
+				//	return fmt.Errorf("failed to write data via ws connection, error: %w", err)
+				//}
+				//
+				//if err := w.Close(); err != nil {
+				//	return fmt.Errorf("failed to close ws connection, error: %w", err)
+				//}
 			}
 
 		case <-ticker.C:
 			lastTransmit := c.lastTransmit
 			if c.conn != nil && (lastTransmit == nil || (lastTransmit != nil && time.Since(*lastTransmit) > PingPeriod)) {
-				c.writeMutex.Lock()
-				deadline := time.Now().Add(10 * time.Second)
-				err := c.conn.WriteControl(websocket.PingMessage, []byte{}, deadline)
-				c.writeMutex.Unlock()
-				if err != nil {
-					return fmt.Errorf("failed to send ping, error: %w", err)
-				}
+				go func() {
+					c.sendChan <- []byte("ping")
+				}()
 			}
 		}
 	}
 }
-
 func (c *ClientWs) receiver() error {
 	for {
 		select {
