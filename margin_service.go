@@ -928,8 +928,8 @@ func (s *CloseIsolatedMarginUserStreamService) Do(ctx context.Context, opts ...R
 		secType:  secTypeAPIKey,
 	}
 
-	r.setFormParam("listenKey", s.listenKey)
-	r.setFormParam("symbol", s.symbol)
+	r.setParam("listenKey", s.listenKey)
+	r.setParam("symbol", s.symbol)
 
 	_, err = s.c.callAPI(ctx, r, opts...)
 	return err
@@ -1004,7 +1004,7 @@ func (s *CloseMarginUserStreamService) Do(ctx context.Context, opts ...RequestOp
 		secType:  secTypeAPIKey,
 	}
 
-	r.setFormParam("listenKey", s.listenKey)
+	r.setParam("listenKey", s.listenKey)
 
 	_, err = s.c.callAPI(ctx, r, opts...)
 	return err
@@ -1149,7 +1149,7 @@ func (s *ChangeMaxLeverageService) Do(ctx context.Context, opts ...RequestOption
 		endpoint: "/sapi/v1/margin/max-leverage",
 		secType:  secTypeSigned,
 	}
-	r.setParam("maxLeverage", s.maxLeverage)
+	r.setFormParam("maxLeverage", s.maxLeverage)
 
 	data, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
@@ -1220,10 +1220,10 @@ func (s *MarginBorrowRepayService) Do(ctx context.Context, opts ...RequestOption
 	}
 	r.setFormParams(m)
 	if s.isIsolated {
-		r.setParam("isIsolated", "TRUE")
+		r.setFormParam("isIsolated", "TRUE")
 	}
 	if s.symbol != nil {
-		r.setParam("symbol", *s.symbol)
+		r.setFormParam("symbol", *s.symbol)
 	}
 
 	res = new(TransactionResponse)

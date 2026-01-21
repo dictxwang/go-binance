@@ -646,15 +646,15 @@ func (s *CancelOrderService) Do(ctx context.Context, opts ...RequestOption) (res
 		endpoint: "/api/v3/order",
 		secType:  secTypeSigned,
 	}
-	r.setFormParam("symbol", s.symbol)
+	r.setParam("symbol", s.symbol)
 	if s.orderID != nil {
-		r.setFormParam("orderId", *s.orderID)
+		r.setParam("orderId", *s.orderID)
 	}
 	if s.origClientOrderID != nil {
-		r.setFormParam("origClientOrderId", *s.origClientOrderID)
+		r.setParam("origClientOrderId", *s.origClientOrderID)
 	}
 	if s.newClientOrderID != nil {
-		r.setFormParam("newClientOrderId", *s.newClientOrderID)
+		r.setParam("newClientOrderId", *s.newClientOrderID)
 	}
 	data, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
@@ -708,15 +708,15 @@ func (s *CancelOCOService) Do(ctx context.Context, opts ...RequestOption) (res *
 		endpoint: "/api/v3/orderList",
 		secType:  secTypeSigned,
 	}
-	r.setFormParam("symbol", s.symbol)
+	r.setParam("symbol", s.symbol)
 	if s.listClientOrderID != "" {
-		r.setFormParam("listClientOrderId", s.listClientOrderID)
+		r.setParam("listClientOrderId", s.listClientOrderID)
 	}
 	if s.orderListID != 0 {
-		r.setFormParam("orderListId", s.orderListID)
+		r.setParam("orderListId", s.orderListID)
 	}
 	if s.newClientOrderID != "" {
-		r.setFormParam("newClientOrderId", s.newClientOrderID)
+		r.setParam("newClientOrderId", s.newClientOrderID)
 	}
 	data, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
