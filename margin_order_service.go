@@ -778,10 +778,10 @@ func (s *CancelMarginAllOpenOrdersService) Do(ctx context.Context, opts ...Reque
 		endpoint: "/sapi/v1/margin/openOrders",
 		secType:  secTypeSigned,
 	}
-	r.setFormParam("symbol", s.symbol)
+	r.setParam("symbol", s.symbol)
 
 	if s.isIsolated != nil {
-		r.setFormParam("isIsolated", *s.isIsolated)
+		r.setParam("isIsolated", *s.isIsolated)
 	}
 	data, err := s.c.callAPI(ctx, r, opts...)
 	if err != nil {
