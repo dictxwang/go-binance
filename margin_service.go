@@ -1010,6 +1010,37 @@ func (s *CloseMarginUserStreamService) Do(ctx context.Context, opts ...RequestOp
 	return err
 }
 
+// ListenTokenResponse represents the response from /sapi/v1/userListenToken
+type ListenTokenResponse struct {
+	Token          string `json:"token"`
+	ExpirationTime int64  `json:"expirationTime"`
+}
+
+// StartMarginListenTokenService create listen token for margin user data stream (replaces listenKey)
+type StartMarginListenTokenService struct {
+	c *Client
+}
+
+// Do send request
+func (s *StartMarginListenTokenService) Do(ctx context.Context, opts ...RequestOption) (*ListenTokenResponse, error) {
+	r := &request{
+		method:   http.MethodPost,
+		endpoint: "/sapi/v1/userListenToken",
+		secType:  secTypeAPIKey,
+	}
+
+	data, err := s.c.callAPI(ctx, r, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp ListenTokenResponse
+	if err := json.Unmarshal(data, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 // GetAllMarginAssetsService get margin pair info
 type GetAllMarginAssetsService struct {
 	c *Client

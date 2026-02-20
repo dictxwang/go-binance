@@ -849,6 +849,11 @@ func (c *Client) NewCloseMarginUserStreamService() *CloseMarginUserStreamService
 	return &CloseMarginUserStreamService{c: c}
 }
 
+// NewStartMarginListenTokenService init starting margin listen token service (replaces listenKey)
+func (c *Client) NewStartMarginListenTokenService() *StartMarginListenTokenService {
+	return &StartMarginListenTokenService{c: c}
+}
+
 // NewStartIsolatedMarginUserStreamService init starting margin user stream service
 func (c *Client) NewStartIsolatedMarginUserStreamService() *StartIsolatedMarginUserStreamService {
 	return &StartIsolatedMarginUserStreamService{c: c}

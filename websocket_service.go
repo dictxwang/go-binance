@@ -4,8 +4,11 @@ import (
 	stdjson "encoding/json"
 	"fmt"
 	"net"
+	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -700,6 +703,207 @@ func WsUserDataServeWithIp(listenKey string, localIP string, handler WsUserDataH
 		handler(event)
 	}
 	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsUserDataServeWithListenToken subscribes to user data stream via WS API using listenToken.
+// This replaces WsUserDataServe for margin accounts after Binance retired the listenKey approach.
+// Events are pushed as {"subscriptionId":0,"event":{...}} and unwrapped before calling handler.
+func WsUserDataServeWithListenToken(listenToken string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, renewC chan<- string, err error) {
+	return wsServeListenToken(listenToken, "", handler, errHandler)
+}
+
+// WsUserDataServeWithListenTokenAndIp is like WsUserDataServeWithListenToken but binds to a local IP.
+func WsUserDataServeWithListenTokenAndIp(listenToken string, localIP string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, renewC chan<- string, err error) {
+	return wsServeListenToken(listenToken, localIP, handler, errHandler)
+}
+
+// wsAPIEventWrapper is the outer envelope for WS API push events
+type wsAPIEventWrapper struct {
+	SubscriptionID *int                 `json:"subscriptionId"`
+	Event          stdjson.RawMessage   `json:"event"`
+	ExpirationTime *int64               `json:"expirationTime"`
+	Error          *wsAPISubscribeError `json:"error"`
+}
+
+type wsAPISubscribeError struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+func wsServeListenToken(listenToken string, localIP string, handler WsUserDataHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, renewC chan<- string, err error) {
+	endpoint := getTradingWsEndpoint()
+	cfg := newWsConfig(endpoint)
+	if localIP != "" {
+		cfg.WithIP(localIP)
+	}
+
+	// Connect
+	doneC = make(chan struct{})
+	stopC = make(chan struct{})
+	renewCh := make(chan string, 1)
+
+	var dialer websocket.Dialer
+	if cfg.IP == "" {
+		dialer = websocket.Dialer{
+			Proxy:             http.ProxyFromEnvironment,
+			HandshakeTimeout:  45 * time.Second,
+			EnableCompression: false,
+		}
+	} else {
+		dialer = websocket.Dialer{
+			NetDial: func(network, addr string) (net.Conn, error) {
+				localAddr, resolveErr := net.ResolveTCPAddr("tcp", cfg.IP+":0")
+				if resolveErr != nil {
+					return nil, resolveErr
+				}
+				d := net.Dialer{LocalAddr: localAddr}
+				return d.Dial(network, addr)
+			},
+			HandshakeTimeout:  45 * time.Second,
+			EnableCompression: false,
+		}
+	}
+
+	c, _, err := dialer.Dial(endpoint, nil)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c.SetReadLimit(655350)
+
+	// Send subscribe message
+	subMsg, _ := stdjson.Marshal(map[string]interface{}{
+		"id":     fmt.Sprintf("lt_%d", time.Now().UnixMilli()),
+		"method": "userDataStream.subscribe.listenToken",
+		"params": map[string]interface{}{
+			"listenToken": listenToken,
+		},
+	})
+	if writeErr := c.WriteMessage(websocket.TextMessage, subMsg); writeErr != nil {
+		c.Close()
+		return nil, nil, nil, writeErr
+	}
+
+	go func() {
+		defer close(doneC)
+
+		// Renew handler: sends new subscribe on same connection (sole WriteMessage writer)
+		go func() {
+			for {
+				select {
+				case newToken := <-renewCh:
+					msg, _ := stdjson.Marshal(map[string]interface{}{
+						"id":     fmt.Sprintf("lt_%d", time.Now().UnixMilli()),
+						"method": "userDataStream.subscribe.listenToken",
+						"params": map[string]interface{}{
+							"listenToken": newToken,
+						},
+					})
+					if writeErr := c.WriteMessage(websocket.TextMessage, msg); writeErr != nil {
+						errHandler(writeErr)
+					}
+				case <-stopC:
+					return
+				case <-doneC:
+					return
+				}
+			}
+		}()
+
+		// Ping keepalive (WriteControl is thread-safe with WriteMessage)
+		go func() {
+			ticker := time.NewTicker(15 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					deadline := time.Now().Add(10 * time.Second)
+					if pingErr := c.WriteControl(websocket.PingMessage, []byte{}, deadline); pingErr != nil {
+						return
+					}
+				case <-stopC:
+					return
+				case <-doneC:
+					return
+				}
+			}
+		}()
+
+		// Stop handler
+		silent := false
+		go func() {
+			select {
+			case <-stopC:
+				silent = true
+			case <-doneC:
+			}
+			c.Close()
+		}()
+
+		for {
+			_, message, readErr := c.ReadMessage()
+			if readErr != nil {
+				if !silent {
+					errHandler(readErr)
+				}
+				return
+			}
+
+			// Parse outer wrapper
+			var wrapper wsAPIEventWrapper
+			if unmarshalErr := stdjson.Unmarshal(message, &wrapper); unmarshalErr != nil {
+				errHandler(unmarshalErr)
+				continue
+			}
+
+			// Error response
+			if wrapper.Error != nil {
+				errHandler(fmt.Errorf("ws-api error: code=%d, msg=%s", wrapper.Error.Code, wrapper.Error.Msg))
+				continue
+			}
+
+			// Push event: has "event" field with data
+			if len(wrapper.Event) > 0 && string(wrapper.Event) != "null" {
+				eventData := wrapper.Event
+
+				// Check for stream termination
+				if strings.Contains(string(eventData), "eventStreamTerminated") {
+					errHandler(fmt.Errorf("eventStreamTerminated"))
+					return
+				}
+
+				event := new(WsUserDataEvent)
+				if unmarshalErr := json.Unmarshal(eventData, event); unmarshalErr != nil {
+					errHandler(unmarshalErr)
+					continue
+				}
+
+				j, jErr := newJSON([]byte(eventData))
+				if jErr != nil {
+					errHandler(jErr)
+					continue
+				}
+
+				switch UserDataEventType(j.Get("e").MustString()) {
+				case UserDataEventTypeOutboundAccountPosition:
+					_ = json.Unmarshal(eventData, &event.AccountUpdate)
+				case UserDataEventTypeBalanceUpdate:
+					_ = json.Unmarshal(eventData, &event.BalanceUpdate)
+				case UserDataEventTypeExecutionReport:
+					_ = json.Unmarshal(eventData, &event.OrderUpdate)
+				case UserDataEventTypeListStatus:
+					_ = json.Unmarshal(eventData, &event.OCOUpdate)
+				}
+
+				handler(event)
+				continue
+			}
+
+			// Subscribe success/renew response (subscriptionId + expirationTime, no event)
+			// Just ignore
+		}
+	}()
+
+	return doneC, stopC, renewCh, nil
 }
 
 // WsMarketStatHandler handle websocket that push single market statistics for 24hr
