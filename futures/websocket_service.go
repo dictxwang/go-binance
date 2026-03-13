@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 )
@@ -62,6 +63,11 @@ func getCombinedEndpoint() string {
 	return baseCombinedMainURL
 }
 
+// getCombinedIntranetEndpoint return the base intranet endpoint of the combined stream according the UseTestnet flag
+func getCombinedIntranetEndpoint() string {
+	return baseInternalCombinedMainURL
+}
+
 // getTradingWsEndpoint return the base endpoint of the WS according the UseTestnet flag
 func getTradingWsEndpoint() string {
 	if UseTestnet {
@@ -71,6 +77,14 @@ func getTradingWsEndpoint() string {
 		return baseInternalTradingWsUrl
 	}
 	return baseTradingWsUrl
+}
+
+func getTradingWsEndpointIfIntranet(useIntranet bool) string {
+	if useIntranet {
+		return baseInternalTradingWsUrl
+	} else {
+		return baseTradingWsUrl
+	}
 }
 
 // wsEndpointWithCategory returns the WS endpoint with category path when UseNewWsEndpoint is enabled.
@@ -99,6 +113,14 @@ func combinedEndpointWithCategory(category string) string {
 		return fmt.Sprintf("wss://fstream-mm.binance.com/%s/stream?streams=", category)
 	}
 	return fmt.Sprintf("wss://fstream.binance.com/%s/stream?streams=", category)
+}
+
+// combinedIntranetEndpointWithCategory returns the intranet combined stream endpoint with category path.
+func combinedIntranetEndpointWithCategory(category string) string {
+	if !UseNewWsEndpoint || category == "" {
+		return getCombinedIntranetEndpoint()
+	}
+	return fmt.Sprintf("wss://fstream-mm.binance.com/%s/stream?streams=", category)
 }
 
 // WsAggTradeEvent define websocket aggTrde event.
@@ -142,6 +164,42 @@ func WsCombinedAggTradeServe(symbols []string, handler WsAggTradeHandler, errHan
 	}
 	endpoint = endpoint[:len(endpoint)-1]
 	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		j, err := newJSON(message)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+
+		stream := j.Get("stream").MustString()
+		data := j.Get("data").MustMap()
+
+		symbol := strings.Split(stream, "@")[0]
+
+		jsonData, _ := json.Marshal(data)
+
+		event := new(WsAggTradeEvent)
+		err = json.Unmarshal(jsonData, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		event.Symbol = strings.ToUpper(symbol)
+
+		handler(event)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedAggTradeServeWithIP is similar to WsAggTradeServe, but it handles multiple symbols
+func WsCombinedAggTradeServeWithIP(sourceIP string, symbols []string, handler WsAggTradeHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := combinedEndpointWithCategory(WsCategoryMarket)
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@aggTrade", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(sourceIP)
 	wsHandler := func(message []byte) {
 		j, err := newJSON(message)
 		if err != nil {
@@ -283,8 +341,11 @@ type WsAllMarkPriceEvent []*WsMarkPriceEvent
 // WsAllMarkPriceHandler handle websocket that pushes price and funding rate for all symbol.
 type WsAllMarkPriceHandler func(event WsAllMarkPriceEvent)
 
-func wsAllMarkPriceServe(endpoint string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+func wsAllMarkPriceServe(endpoint string, localIP string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	cfg := newWsConfig(endpoint)
+	if localIP != "" {
+		cfg.WithIP(localIP)
+	}
 	wsHandler := func(message []byte) {
 		var event WsAllMarkPriceEvent
 		err := json.Unmarshal(message, &event)
@@ -300,7 +361,13 @@ func wsAllMarkPriceServe(endpoint string, handler WsAllMarkPriceHandler, errHand
 // WsAllMarkPriceServe serve websocket that pushes price and funding rate for all symbol.
 func WsAllMarkPriceServe(handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
 	endpoint := fmt.Sprintf("%s/!markPrice@arr", wsEndpointWithCategory(WsCategoryMarket))
-	return wsAllMarkPriceServe(endpoint, handler, errHandler)
+	return wsAllMarkPriceServe(endpoint, "", handler, errHandler)
+}
+
+// WsAllMarkPriceServeWithIP serve websocket that pushes price and funding rate for all symbol.
+func WsAllMarkPriceServeWithIP(ip string, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := fmt.Sprintf("%s/!markPrice@arr", wsEndpointWithCategory(WsCategoryMarket))
+	return wsAllMarkPriceServe(endpoint, ip, handler, errHandler)
 }
 
 // WsAllMarkPriceServeWithRate serve websocket that pushes price and funding rate for all symbol and rate.
@@ -315,7 +382,22 @@ func WsAllMarkPriceServeWithRate(rate time.Duration, handler WsAllMarkPriceHandl
 		return nil, nil, errors.New("Invalid rate")
 	}
 	endpoint := fmt.Sprintf("%s/!markPrice@arr%s", wsEndpointWithCategory(WsCategoryMarket), rateStr)
-	return wsAllMarkPriceServe(endpoint, handler, errHandler)
+	return wsAllMarkPriceServe(endpoint, "", handler, errHandler)
+}
+
+// WsAllMarkPriceServeWithRateWithIP serve websocket that pushes price and funding rate for all symbol and rate.
+func WsAllMarkPriceServeWithRateWithIP(ip string, rate time.Duration, handler WsAllMarkPriceHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	var rateStr string
+	switch rate {
+	case 3 * time.Second:
+		rateStr = ""
+	case 1 * time.Second:
+		rateStr = "@1s"
+	default:
+		return nil, nil, errors.New("Invalid rate")
+	}
+	endpoint := fmt.Sprintf("%s/!markPrice@arr%s", wsEndpointWithCategory(WsCategoryMarket), rateStr)
+	return wsAllMarkPriceServe(endpoint, ip, handler, errHandler)
 }
 
 // WsKlineEvent define websocket kline event
@@ -666,7 +748,26 @@ func WsCombinedBookTickerServe(symbols []string, handler WsBookTickerHandler, er
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
 
+// WsCombinedBookTickerServeIfIntranet is similar to WsCombinedBookTickerServeWithIntranet, but it is using intranet
+func WsCombinedBookTickerServeIfIntranet(symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := combinedIntranetEndpointWithCategory(WsCategoryPublic)
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
 	cfg := newWsConfig(endpoint)
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
@@ -687,9 +788,53 @@ func WsCombinedBookTickerServeWithIP(ip string, symbols []string, handler WsBook
 		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
 	}
 	endpoint = endpoint[:len(endpoint)-1]
-
 	cfg := newWsConfig(endpoint)
 	cfg.WithIP(ip)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServeWithIPIfIntranet is similar to WsCombinedBookTickerServeWithIP,  but it is using intranet
+func WsCombinedBookTickerServeWithIPIfIntranet(ip string, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := combinedIntranetEndpointWithCategory(WsCategoryPublic)
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(ip)
+	wsHandler := func(message []byte) {
+		event := new(WsCombinedBookTickerEvent)
+		err := json.Unmarshal(message, event)
+		if err != nil {
+			errHandler(err)
+			return
+		}
+		handler(event.Data)
+	}
+	return wsServe(cfg, wsHandler, errHandler)
+}
+
+// WsCombinedBookTickerServeWithIPAndResolver is similar to WsCombinedBookTickerServe, but it is using assigned sourceIP and resolver to connect ws service
+func WsCombinedBookTickerServeWithIPAndResolver(sourceIP string, resolver *net.Resolver, symbols []string, handler WsBookTickerHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
+	endpoint := combinedEndpointWithCategory(WsCategoryPublic)
+	for _, s := range symbols {
+		endpoint += fmt.Sprintf("%s@bookTicker", strings.ToLower(s)) + "/"
+	}
+	endpoint = endpoint[:len(endpoint)-1]
+
+	cfg := newWsConfig(endpoint)
+	cfg.WithIP(sourceIP)
+	cfg.WithResolver(resolver)
+
 	wsHandler := func(message []byte) {
 		event := new(WsCombinedBookTickerEvent)
 		err := json.Unmarshal(message, event)
@@ -1129,8 +1274,8 @@ type WsOrderTradeUpdate struct {
 	ExecutionType        OrderExecutionType `json:"x"`   // Execution type
 	Status               OrderStatusType    `json:"X"`   // Order status
 	ID                   int64              `json:"i"`   // Order ID
-	LastFilledQty        string             `json:"l"`   // Order Last Filled Quantity
-	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Quantity
+	LastFilledQty        string             `json:"l"`   // Order Last Filled Volume
+	AccumulatedFilledQty string             `json:"z"`   // Order Filled Accumulated Volume
 	LastFilledPrice      string             `json:"L"`   // Last Filled Price
 	CommissionAsset      string             `json:"N"`   // Commission Asset, will not push if no commission
 	Commission           string             `json:"n"`   // Commission, will not push if no commission
@@ -1194,4 +1339,17 @@ func WsUserDataServeWithIP(ip, listenKey string, handler WsUserDataHandler, errH
 		handler(event)
 	}
 	return wsServe(cfg, wsHandler, errHandler)
+}
+
+func resolveDomainIpList(domain string) ([]string, error) {
+
+	ipList := make([]string, 0)
+	ips, err := net.LookupIP(domain)
+	if err != nil {
+		return ipList, err
+	}
+	for _, ip := range ips {
+		ipList = append(ipList, ip.String())
+	}
+	return ipList, nil
 }
