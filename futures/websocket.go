@@ -1,8 +1,10 @@
 package futures
 
 import (
+	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -18,7 +20,6 @@ type ErrHandler func(err error)
 type WsConfig struct {
 	Endpoint string
 	IP       string
-	Resolver *net.Resolver
 }
 
 func newWsConfig(endpoint string) *WsConfig {
@@ -29,10 +30,6 @@ func newWsConfig(endpoint string) *WsConfig {
 
 func (cfg *WsConfig) WithIP(ip string) {
 	cfg.IP = ip
-}
-
-func (cfg *WsConfig) WithResolver(resolver *net.Resolver) {
-	cfg.Resolver = resolver
 }
 
 var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (doneC, stopC chan struct{}, err error) {
@@ -50,19 +47,9 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (don
 				if err != nil {
 					return nil, err
 				}
-				var d net.Dialer
-				if cfg.Resolver == nil {
-					d = net.Dialer{
-						LocalAddr: localAddr,
-						Resolver:  net.DefaultResolver,
-					}
-				} else {
-					d = net.Dialer{
-						LocalAddr: localAddr,
-						Resolver:  cfg.Resolver,
-					}
+				d := net.Dialer{
+					LocalAddr: localAddr,
 				}
-
 				return d.Dial(network, addr)
 			},
 			HandshakeTimeout:  45 * time.Second,
@@ -70,6 +57,7 @@ var wsServe = func(cfg *WsConfig, handler WsHandler, errHandler ErrHandler) (don
 		}
 	}
 
+	fmt.Fprintf(os.Stderr, "[WsConnect] endpoint=%s ip=%s\n", cfg.Endpoint, cfg.IP)
 	c, _, err := Dialer.Dial(cfg.Endpoint, nil)
 	if err != nil {
 		return nil, nil, err
